@@ -56,6 +56,7 @@ def main():
 
     # Build aggregated data
     data = {
+        "date": args.date,
         "hw": args.hw,
         "conc": conc,
         "image": args.image,

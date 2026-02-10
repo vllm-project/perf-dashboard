@@ -224,11 +224,13 @@ fi
 # ─── Post-process results ───────────────────────────────────────────────────
 echo ""
 echo "Post-processing results..."
+DATE="$(date +'%Y-%m-%d %H:%M:%S')"
 
 python3 "${SCRIPT_DIR}/process_result.py" \
     --raw-result "${OUTPUT_DIR}/${RESULT_FILENAME}.json" \
     --output-dir "$OUTPUT_DIR" \
     --hw h200 \
+    --date "$DATE" \
     --tp "$TP" \
     --conc "$CONC" \
     --framework vllm \
@@ -245,3 +247,9 @@ echo "============================================="
 echo " Raw result:  ${OUTPUT_DIR}/${RESULT_FILENAME}.json"
 echo " Aggregated:  ${OUTPUT_DIR}/agg_${RESULT_FILENAME}.json"
 echo "============================================="
+
+# --- Upload results ---
+# aws s3 cp "${OUTPUT_DIR}/agg_${RESULT_FILENAME}.json" "s3://vllm-perf/gptoss-fp4/${DATE}/agg_${RESULT_FILENAME}.json"
+# aws s3 cp "${OUTPUT_DIR}/${RESULT_FILENAME}.json" "s3://vllm-perf/gptoss-fp4/${DATE}/${RESULT_FILENAME}.json"
+buildkite-agent artifact upload "${OUTPUT_DIR}/agg_${RESULT_FILENAME}.json"
+buildkite-agent artifact upload "${OUTPUT_DIR}/${RESULT_FILENAME}.json"
