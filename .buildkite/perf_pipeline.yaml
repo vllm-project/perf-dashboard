@@ -4,3 +4,14 @@ steps:
     queue: perf-h200
   commands:
     - cd benchmark && ./run.sh
+  plugins:
+    - docker#v5.2.0:
+        image: vllm/vllm-openai:v0.13.0
+        always-pull: true
+        propagate-environment: true
+        gpus: all
+        environment:
+        - HF_HOME=/dev/shm/
+        - HF_TOKEN
+        volumes:
+        - /dev/shm:/dev/shm
