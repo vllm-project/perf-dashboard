@@ -13,9 +13,8 @@ CONC=64
 PORT=8888
 OUTPUT_DIR="${SCRIPT_DIR}/results"
 GPU_MEM_UTIL=0.9
-HOST_MODE=false
 RANDOM_RANGE_RATIO=1.0
-HF_CACHE="${HF_HOME:-${HOME}/.cache/huggingface}"
+HF_CACHE="${HF_HOME:-/dev/shm/.cache/huggingface}"
 
 # ─── Usage ────────────────────────────────────────────────────────────────────
 usage() {
@@ -66,7 +65,6 @@ while [[ $# -gt 0 ]]; do
         --port)            PORT="$2";            shift 2 ;;
         --output-dir)      OUTPUT_DIR="$2";      shift 2 ;;
         --gpu-mem-util)    GPU_MEM_UTIL="$2";    shift 2 ;;
-        --host-mode)       HOST_MODE=true;       shift ;;
         --random-range-ratio) RANDOM_RANGE_RATIO="$2"; shift 2 ;;
         --hf-cache)        HF_CACHE="$2";        shift 2 ;;
         -h|--help)         usage ;;
@@ -102,7 +100,6 @@ echo " Num Prompts:    $NUM_PROMPTS"
 echo " Num Warmups:    $NUM_WARMUPS"
 echo " Port:           $PORT"
 echo " Output Dir:     $OUTPUT_DIR"
-echo " Mode:           $(if $HOST_MODE; then echo 'host'; else echo 'docker'; fi)"
 echo "============================================="
 
 # ─── Generate vLLM config.yaml ───────────────────────────────────────────────
@@ -140,54 +137,21 @@ cleanup() {
 trap cleanup EXIT
 
 # ─── Launch vLLM server ─────────────────────────────────────────────────────
-if $HOST_MODE; then
-    echo ""
-    echo "Launching vLLM server (host mode)..."
-    export VLLM_MXFP4_USE_MARLIN=1
-    export TORCH_CUDA_ARCH_LIST="9.0"
+echo ""
+echo "Launching vLLM server (host mode)..."
+export VLLM_MXFP4_USE_MARLIN=1
+# export TORCH_CUDA_ARCH_LIST="9.0"
 
-    PYTHONNOUSERSITE=1 vllm serve "$MODEL" \
-        --host 0.0.0.0 \
-        --port "$PORT" \
-        --config "$CONFIG_FILE" \
-        --gpu-memory-utilization "$GPU_MEM_UTIL" \
-        --tensor-parallel-size "$TP" \
-        --max-num-seqs "$CONC" \
-        --disable-log-requests > "$SERVER_LOG" 2>&1 &
-    SERVER_PID=$!
-    echo "vLLM server started (PID $SERVER_PID)"
-else
-    echo ""
-    echo "Launching vLLM server (Docker mode)..."
-    echo "Image: $IMAGE"
-
-    CONTAINER_ID=$(docker run -d \
-        --gpus all \
-        --ipc=host \
-        --ulimit memlock=-1 \
-        --ulimit stack=67108864 \
-        -p "${PORT}:${PORT}" \
-        -v "${HF_CACHE}:/root/.cache/huggingface" \
-        -v "${SCRIPT_DIR}/lib:/workspace/lib" \
-        -v "${OUTPUT_DIR}:/workspace/results" \
-        -e VLLM_MXFP4_USE_MARLIN=1 \
-        -e TORCH_CUDA_ARCH_LIST="9.0" \
-        -e HF_TOKEN="${HF_TOKEN:-}" \
-        "$IMAGE" \
-        vllm serve "$MODEL" \
-            --host 0.0.0.0 \
-            --port "$PORT" \
-            --config /workspace/results/config.yaml \
-            --gpu-memory-utilization "$GPU_MEM_UTIL" \
-            --tensor-parallel-size "$TP" \
-            --max-num-seqs "$CONC" \
-            --disable-log-requests)
-
-    echo "Docker container started: $CONTAINER_ID"
-
-    # Follow container logs in background
-    docker logs -f "$CONTAINER_ID" > "$SERVER_LOG" 2>&1 &
-fi
+PYTHONNOUSERSITE=1 vllm serve "$MODEL" \
+    --host 0.0.0.0 \
+    --port "$PORT" \
+    --config "$CONFIG_FILE" \
+    --gpu-memory-utilization "$GPU_MEM_UTIL" \
+    --tensor-parallel-size "$TP" \
+    --max-num-seqs "$CONC" \
+    --disable-log-requests > "$SERVER_LOG" 2>&1 &
+SERVER_PID=$!
+echo "vLLM server started (PID $SERVER_PID)"
 
 # ─── Wait for server health ─────────────────────────────────────────────────
 echo ""
@@ -209,20 +173,11 @@ while true; do
     fi
 
     # Check if server process is still alive
-    if $HOST_MODE; then
-        if [[ -n "$SERVER_PID" ]] && ! kill -0 "$SERVER_PID" 2>/dev/null; then
-            kill "$TAIL_PID" 2>/dev/null || true
-            echo "ERROR: vLLM server died before becoming healthy."
-            echo "Check logs: $SERVER_LOG"
-            exit 1
-        fi
-    else
-        if [[ -n "$CONTAINER_ID" ]] && ! docker ps -q --filter "id=$CONTAINER_ID" | grep -q .; then
-            kill "$TAIL_PID" 2>/dev/null || true
-            echo "ERROR: Docker container exited before server became healthy."
-            echo "Check logs: docker logs $CONTAINER_ID"
-            exit 1
-        fi
+    if [[ -n "$SERVER_PID" ]] && ! kill -0 "$SERVER_PID" 2>/dev/null; then
+        kill "$TAIL_PID" 2>/dev/null || true
+        echo "ERROR: vLLM server died before becoming healthy."
+        echo "Check logs: $SERVER_LOG"
+        exit 1
     fi
 
     ELAPSED=$((ELAPSED + INTERVAL))
