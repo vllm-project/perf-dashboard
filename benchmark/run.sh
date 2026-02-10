@@ -145,9 +145,10 @@ else
     echo "uv already installed."
 fi
 
-uv venv
+UV=/var/lib/buildkite-agent/.local/bin/uv
+$UV venv
 source .venv/bin/activate
-uv pip install vllm --upgrade
+$UV pip install vllm --upgrade
 
 # ─── Launch vLLM server ─────────────────────────────────────────────────────
 echo ""
