@@ -1,0 +1,8 @@
+steps:
+- label: "Run benchmark - GPT-OSS-120B FP4"
+  agents:
+    queue: perf-h200
+  commands:
+    - command -v uv || curl -LsSf https://astral.sh/uv/install.sh | sh
+    - uv pip install --system vllm --upgrade
+    - cd benchmark && ./run.sh
