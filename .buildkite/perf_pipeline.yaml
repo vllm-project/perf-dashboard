@@ -2,13 +2,13 @@ steps:
 - label: "Run benchmark - GPT-OSS-120B FP4"
   agents:
     queue: perf-h200
-  commands:
-    - cd benchmark
-    - ./run.sh
   plugins:
     - docker#v5.2.0:
         image: vllm/vllm-openai:v0.15.1
         entrypoint: ["/bin/bash", "-c"]
+        command: |
+          cd benchmark
+          ./run.sh
         always-pull: true
         propagate-environment: true
         gpus: all
