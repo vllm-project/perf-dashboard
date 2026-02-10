@@ -7,7 +7,8 @@ steps:
     - ./run.sh
   plugins:
     - docker#v5.2.0:
-        image: vllm/vllm-openai:v0.13.0
+        image: vllm/vllm-openai:v0.15.1
+        entrypoint: ["/bin/bash", "-c"]
         always-pull: true
         propagate-environment: true
         gpus: all
