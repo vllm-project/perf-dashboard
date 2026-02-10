@@ -20,6 +20,8 @@ def main():
                         help="Directory to write aggregated result")
     parser.add_argument("--hw", required=True,
                         help="Hardware type (e.g., h200)")
+    parser.add_argument("--date", required=True,
+                        help="Date of the benchmark run")
     parser.add_argument("--tp", type=int, required=True,
                         help="Tensor parallel size")
     parser.add_argument("--conc", type=int, default=None,
