@@ -1,5 +1,7 @@
 steps:
 - label: "Run benchmark - GPT-OSS-120B FP4"
+  retry:
+    manual: true
   agents:
     queue: perf-h200
   plugins:
