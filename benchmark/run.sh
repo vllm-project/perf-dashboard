@@ -136,20 +136,6 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# --- Install UV and vLLM ---
-if ! command -v uv >/dev/null 2>&1; then
-    echo "uv not found, installing..."
-    curl -Ls https://astral.sh/uv/install.sh | bash
-    export PATH="$HOME/.cargo/bin:$PATH"
-else
-    echo "uv already installed."
-fi
-
-UV=/var/lib/buildkite-agent/.local/bin/uv
-$UV venv
-source .venv/bin/activate
-$UV pip install vllm --upgrade
-
 # ─── Launch vLLM server ─────────────────────────────────────────────────────
 echo ""
 echo "Launching vLLM server (host mode)..."
