@@ -6,9 +6,7 @@ steps:
     - docker#v5.2.0:
         image: vllm/vllm-openai:v0.15.1
         entrypoint: ["/bin/bash", "-c"]
-        command: |
-          cd benchmark
-          ./run.sh
+        command: ["./benchmark/run.sh"]
         always-pull: true
         propagate-environment: true
         gpus: all
