@@ -1,14 +1,14 @@
 steps:
-- label: "GPT-OSS-120B FP4 - vLLM {{matrix}}"
+- label: "GPT-OSS-120B FP4 - vLLM v{{matrix}}"
   retry:
     manual: true
   agents:
     queue: perf-h200
   plugins:
     - docker#v5.2.0:
-        image: vllm/vllm-openai:{{matrix}}
+        image: vllm/vllm-openai:v{{matrix}}
         entrypoint: "/bin/bash"
-        command: ["-c", "./benchmark/run.sh --image vllm/vllm-openai:{{matrix}}"]
+        command: ["-c", "./benchmark/run.sh --image vllm/vllm-openai:v{{matrix}}"]
         always-pull: true
         propagate-environment: true
         gpus: all
