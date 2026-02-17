@@ -1,5 +1,5 @@
 steps:
-- label: "{{ matrix.model }} FP4 - {{ matrix.image }}"
+- label: "{{ matrix.model }} FP4 - {{ matrix.image }} - TP{{ matrix.tensor_parallel_size }} - CONC{{ matrix.concurrency }} - ISL{{ matrix.input_sequence_length }} - OSL{{ matrix.output_sequence_length }}"
   retry:
     manual: true
   agents:
