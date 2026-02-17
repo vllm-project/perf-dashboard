@@ -8,6 +8,7 @@ import argparse
 import json
 import os
 import sys
+import requests
 
 
 def main():
@@ -95,8 +96,6 @@ def main():
             )
 
     # Send data to DB
-    import requests
-    import json
     DATABRICKS_WORKSPACE_URL = os.getenv("DATABRICKS_WORKSPACE_URL")
     ZEROBUS_INGEST_URL = os.getenv("ZEROBUS_INGEST_URL")
     CATALOG = "vllm_data_warehouse"
