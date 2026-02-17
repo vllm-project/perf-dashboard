@@ -107,6 +107,7 @@ CONFIG_FILE="${OUTPUT_DIR}/config.yaml"
 cat > "$CONFIG_FILE" <<EOF
 async-scheduling: true
 no-enable-prefix-caching: true
+max-cudagraph-capture-size: 2048
 max-num-batched-tokens: 8192
 max-model-len: $MAX_MODEL_LEN
 EOF
