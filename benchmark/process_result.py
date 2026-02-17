@@ -122,6 +122,7 @@ def main():
         headers=headers,
         data=json.dumps(serialized_objects)
     )
+    print(response.text)
     # Write output
     raw_basename = os.path.splitext(os.path.basename(args.raw_result))[0]
     output_filename = f"agg_{raw_basename}.json"
