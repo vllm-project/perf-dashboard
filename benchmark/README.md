@@ -71,7 +71,7 @@ Standard benchmark_serving.py output including throughput, latency percentiles, 
 
 ```json
 {
-  "hw": "h200",
+  "device": "h200",
   "conc": 64,
   "model": "openai/gpt-oss-120b",
   "framework": "vllm",

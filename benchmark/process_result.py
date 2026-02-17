@@ -59,7 +59,7 @@ def main():
     # Build aggregated data
     data = {
         "date": args.date,
-        "hw": args.hw,
+        "device": args.device,
         "conc": conc,
         "image": args.image,
         "model": bmk_result.get("model_id", args.model),
