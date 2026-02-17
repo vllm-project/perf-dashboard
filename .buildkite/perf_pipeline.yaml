@@ -15,6 +15,10 @@ steps:
         environment:
         - HF_HOME=/dev/shm/
         - HF_TOKEN
+        - DATABRICKS_WORKSPACE_URL
+        - ZEROBUS_INGEST_URL
+        - ACCESS_TOKEN
+        - TABLE
         volumes:
         - /dev/shm:/dev/shm
         mount-buildkite-agent: true
