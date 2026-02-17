@@ -101,7 +101,7 @@ def main():
     CATALOG = "vllm_data_warehouse"
     SCHEMA = "default"
     TABLE = os.getenv("TABLE")
-    ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
+    access_token = os.getenv("ACCESS_TOKEN")
     JSON_OBJECT = [
         {
             "message": data
