@@ -1,14 +1,14 @@
 steps:
-- label: "GPT-OSS-120B FP4 - vLLM v{{matrix}}"
+- label: "{{ matrix.model }} {{ matrix.precision }} - {{ matrix.image }}"
   retry:
     manual: true
   agents:
     queue: perf-h200
   plugins:
     - docker#v5.2.0:
-        image: vllm/vllm-openai:v{{matrix}}
+        image: {{ matrix.image }}
         entrypoint: "/bin/bash"
-        command: ["-c", "./benchmark/run.sh --image vllm/vllm-openai:v{{matrix}}"]
+        command: ["-c", "./benchmark/run.sh --image {{ matrix.image }} --model {{ matrix.model }} --conc {{ matrix.concurrency }} --isl {{ matrix.input_sequence_length }} --osl {{ matrix.output_sequence_length }} --tp {{ matrix.tensor_parallel_size }}"]
         always-pull: true
         propagate-environment: true
         gpus: all
@@ -19,7 +19,25 @@ steps:
         - /dev/shm:/dev/shm
         mount-buildkite-agent: true
   matrix:
-    - "0.10.1"
-    - "0.10.1.1"
-    - "0.10.2"
-    - "0.11.0"
+    setup:
+      image:
+        - "vllm/vllm-openai:v0.15.1"
+      model:
+        - "openai/gpt-oss-120b"
+      precision:
+        - "FP4"
+      concurrency:
+        - "4"
+        - "8"
+        - "16"
+        - "32"
+        - "64"
+      input_sequence_length:
+        - "1024"
+      output_sequence_length:
+        - "1024"
+      tensor_parallel_size:
+        - "1"
+        - "2"
+        - "4"
+        - "8"
