@@ -67,10 +67,10 @@ def main():
         "framework": args.framework,
         "precision": args.precision,
         "spec_decoding": args.spec_decoding,
-        "disagg": False,
+        "disagg": "false",
         "isl": args.isl,
         "osl": args.osl,
-        "is_multinode": False,
+        "is_multinode": "false",
         "tp": args.tp,
         "ep": 1,
         "dp_attention": "false",
@@ -94,6 +94,35 @@ def main():
                 1000.0 / float(value)
             )
 
+    # Send data to DB
+    import requests
+    import json
+    DATABRICKS_WORKSPACE_URL = os.getenv("DATABRICKS_WORKSPACE_URL")
+    ZEROBUS_INGEST_URL = os.getenv("ZEROBUS_INGEST_URL")
+    CATALOG = "vllm_data_warehouse"
+    SCHEMA = "default"
+    TABLE = os.getenv("TABLE")
+    ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
+    JSON_OBJECT = [
+        {
+            "message": data
+        }
+    ]
+
+    serialized_objects = [{k: json.dumps(v) for k,v in i.items()} for i in JSON_OBJECT]
+
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {access_token}",
+        "unity-catalog-endpoint": DATABRICKS_WORKSPACE_URL,
+        "x-databricks-zerobus-table-name": f"{CATALOG}.{SCHEMA}.{TABLE}"
+    }
+
+    response = requests.post(
+        f"{ZEROBUS_INGEST_URL}/api/1.0/ingest-batch?table_name={CATALOG}.{SCHEMA}.{TABLE}",
+        headers=headers,
+        data=json.dumps(serialized_objects)
+    )
     # Write output
     raw_basename = os.path.splitext(os.path.basename(args.raw_result))[0]
     output_filename = f"agg_{raw_basename}.json"
