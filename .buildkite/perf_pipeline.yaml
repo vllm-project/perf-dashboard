@@ -6,7 +6,7 @@ steps:
     queue: perf-h200
   plugins:
     - docker#v5.2.0:
-        image: {{ matrix.image }}
+        image: "{{ matrix.image }}"
         entrypoint: "/bin/bash"
         command: ["-c", "./benchmark/run.sh --image {{ matrix.image }} --model {{ matrix.model }} --conc {{ matrix.concurrency }} --isl {{ matrix.input_sequence_length }} --osl {{ matrix.output_sequence_length }} --tp {{ matrix.tensor_parallel_size }}"]
         always-pull: true
