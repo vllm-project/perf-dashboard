@@ -18,8 +18,8 @@ def main():
                         help="Path to the raw benchmark JSON file")
     parser.add_argument("--output-dir", default=".",
                         help="Directory to write aggregated result")
-    parser.add_argument("--hw", required=True,
-                        help="Hardware type (e.g., h200)")
+    parser.add_argument("--device", required=True,
+                        help="Device type (e.g., h200)")
     parser.add_argument("--date", required=True,
                         help="Date of the benchmark run")
     parser.add_argument("--tp", type=int, required=True,
