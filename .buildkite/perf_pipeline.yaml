@@ -1,5 +1,5 @@
 steps:
-- label: "{{ matrix.model }} {{ matrix.precision }} - {{ matrix.image }}"
+- label: "{{ matrix.model }} FP4 - {{ matrix.image }}"
   retry:
     manual: true
   agents:
@@ -24,8 +24,6 @@ steps:
         - "vllm/vllm-openai:v0.15.1"
       model:
         - "openai/gpt-oss-120b"
-      precision:
-        - "FP4"
       concurrency:
         - "4"
         - "8"
