@@ -25,7 +25,7 @@ steps:
   matrix:
     setup:
       image:
-        - "vllm/vllm-openai:v0.11.1"
+        - "vllm/vllm-openai:v0.10.2"
       model:
         - "openai/gpt-oss-120b"
       concurrency:
