@@ -24,8 +24,6 @@ usage() {
     cat <<EOF
 Usage: $(basename "$0") [OPTIONS]
 
-Run the GPT-OSS-120B FP4 vLLM benchmark on an H200 machine.
-
 Required:
   --model MODEL           HuggingFace model name
   --image IMAGE           vLLM Docker image
@@ -106,7 +104,7 @@ RESULT_FILENAME="gptoss_fp4_vllm_tp${TP}_isl${ISL}_osl${OSL}_conc${CONC}"
 mkdir -p "$OUTPUT_DIR"
 
 echo "============================================="
-echo " GPT-OSS FP4 vLLM Benchmark"
+echo "vLLM Benchmark"
 echo "============================================="
 echo " Model:          $MODEL"
 echo " TP:             $TP"
@@ -256,7 +254,5 @@ echo " Aggregated:  ${OUTPUT_DIR}/agg_${RESULT_FILENAME}.json"
 echo "============================================="
 
 # --- Upload results ---
-# aws s3 cp "${OUTPUT_DIR}/agg_${RESULT_FILENAME}.json" "s3://vllm-perf/gptoss-fp4/${DATE}/agg_${RESULT_FILENAME}.json"
-# aws s3 cp "${OUTPUT_DIR}/${RESULT_FILENAME}.json" "s3://vllm-perf/gptoss-fp4/${DATE}/${RESULT_FILENAME}.json"
 buildkite-agent artifact upload "${OUTPUT_DIR}/agg_${RESULT_FILENAME}.json"
 buildkite-agent artifact upload "${OUTPUT_DIR}/${RESULT_FILENAME}.json"
