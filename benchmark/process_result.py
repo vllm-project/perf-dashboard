@@ -110,19 +110,21 @@ def main():
 
     serialized_objects = [{k: json.dumps(v) for k,v in i.items()} for i in JSON_OBJECT]
 
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {access_token}",
-        "unity-catalog-endpoint": DATABRICKS_WORKSPACE_URL,
-        "x-databricks-zerobus-table-name": f"{CATALOG}.{SCHEMA}.{TABLE}"
-    }
+    import requests
 
-    response = requests.post(
-        f"{ZEROBUS_INGEST_URL}/api/1.0/ingest-batch?table_name={CATALOG}.{SCHEMA}.{TABLE}",
-        headers=headers,
-        data=json.dumps(serialized_objects)
-    )
-    print(response.text)
+    try:
+        endpoint = "https://vllm-perf-data-ingest-224810116257.us-central1.run.app/"
+        headers = {
+            "Content-Type": "application/json",
+            "X-Source": "Manual Test"
+        }
+        payload = data
+        response = requests.post(endpoint, headers=headers, json=payload, timeout=10)
+        response.raise_for_status()
+        print(f"Successfully sent result to ingestion endpoint (status={response.status_code})")
+    except Exception as e:
+        print(f"Warning: Failed to POST to ingest endpoint: {e}")
+
     # Write output
     raw_basename = os.path.splitext(os.path.basename(args.raw_result))[0]
     output_filename = f"agg_{raw_basename}.json"
