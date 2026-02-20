@@ -1,6 +1,12 @@
 steps:
 - block: "Run H200 - GPT-OSS-120B sweep"
   key: block-h200-gpt-oss
+  depends_on: ~
+
+- block: "Run H200 - Qwen3.5 sweep"
+  key: block-h200-qwen35
+  depends_on: ~
+
 - label: "H200: {{ matrix.model }} FP4 - {{ matrix.image }} - TP{{ matrix.tensor_parallel_size }} - CONC{{ matrix.concurrency }} - ISL{{ matrix.input_sequence_length }} - OSL{{ matrix.output_sequence_length }}"
   depends_on: block-h200-gpt-oss
   retry:
@@ -60,8 +66,6 @@ steps:
         - "4"
         - "8"
 
-- block: "Run H200 - Qwen3.5 sweep"
-  key: block-h200-qwen35
 - label: "H200: {{ matrix.model }} FP4 - {{ matrix.image }} - TP{{ matrix.tensor_parallel_size }} - CONC{{ matrix.concurrency }} - ISL{{ matrix.input_sequence_length }} - OSL{{ matrix.output_sequence_length }}"
   depends_on: block-h200-qwen35
   retry:
