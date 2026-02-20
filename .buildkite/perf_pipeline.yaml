@@ -66,7 +66,7 @@ steps:
         - "4"
         - "8"
 
-- label: "H200: {{ matrix.model }} FP4 - {{ matrix.image }} - TP{{ matrix.tensor_parallel_size }} - CONC{{ matrix.concurrency }} - ISL{{ matrix.input_sequence_length }} - OSL{{ matrix.output_sequence_length }}"
+- label: "H200: {{ matrix.model }} BF16 - {{ matrix.image }} - TP{{ matrix.tensor_parallel_size }} - CONC{{ matrix.concurrency }} - ISL{{ matrix.input_sequence_length }} - OSL{{ matrix.output_sequence_length }}"
   depends_on: block-h200-qwen35
   retry:
     manual: true
@@ -82,6 +82,7 @@ steps:
             ./benchmark/run.sh \
               --image {{ matrix.image }} \
               --model {{ matrix.model }} \
+              --precision bf16 \
               --conc {{ matrix.concurrency }} \
               --isl {{ matrix.input_sequence_length }} \
               --osl {{ matrix.output_sequence_length }} \
