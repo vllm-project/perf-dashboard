@@ -99,7 +99,7 @@ fi
 
 NUM_PROMPTS=$((CONC * 10))
 NUM_WARMUPS=$((CONC * 2))
-RESULT_FILENAME="gptoss_fp4_vllm_tp${TP}_isl${ISL}_osl${OSL}_conc${CONC}"
+RESULT_FILENAME="${MODEL}_tp${TP}_isl${ISL}_osl${OSL}_conc${CONC}"
 
 mkdir -p "$OUTPUT_DIR"
 
