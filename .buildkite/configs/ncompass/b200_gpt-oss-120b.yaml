@@ -1,0 +1,59 @@
+definitions:
+  docker-common-b200: &docker-common-b200
+    entrypoint: "/bin/bash"
+    always-pull: true
+    propagate-environment: true
+    gpus: all
+    environment:
+      - HF_HOME=/raid
+      - HF_TOKEN
+      - NCOMPASS_CACHE_DIR
+      - NCOMPASS_PROFILER_TYPE=NSYS
+      - NCOMPASS_SHARE_COMMAND
+      - NUM_PROMPTS_MULTIPLIER
+      - WORKLOAD_MODE
+      - PROFILE_CASES
+      - SUPABASE_URL
+      - SUPABASE_ANON_KEY
+      - SUPABASE_BUCKET
+    volumes:
+      - /dev/shm:/dev/shm
+      - /raid:/raid
+    mount-buildkite-agent: true
+
+steps:
+- group: "nCompass NSYS Profile - B200 - GPT-OSS-120B"
+  steps:
+  - label: "nCompass NSYS Profile - openai/gpt-oss-120b - TP{{ matrix.tensor_parallel_size }} - CONC{{ matrix.concurrency }} - ISL{{ matrix.input_sequence_length }} - OSL{{ matrix.output_sequence_length }}"
+    retry:
+      manual: true
+    agents:
+      queue: perf-B200
+    plugins:
+      - docker#v5.2.0:
+          <<: *docker-common-b200
+          image: $IMAGE
+          environment:
+            - INPUT_LEN={{ matrix.input_sequence_length }}
+            - OUTPUT_LEN={{ matrix.output_sequence_length }}
+            - CONCURRENCY={{ matrix.concurrency }}
+          command:
+            - "-c"
+            - "pip install supabase ncompass && ./benchmark/run_ncompass_profile.sh --image $IMAGE --model openai/gpt-oss-120b --tp {{ matrix.tensor_parallel_size }} --output-dir benchmark/results/ncompass"
+    matrix:
+      setup:
+        concurrency:
+          - "4"
+          - "8"
+          - "16"
+          - "32"
+          - "64"
+        input_sequence_length:
+          - "1024"
+        output_sequence_length:
+          - "1024"
+        tensor_parallel_size:
+          - "1"
+          - "2"
+          - "4"
+          - "8"

@@ -1,17 +1,3 @@
-definitions:
-  docker-common-h200: &docker-common-h200
-    entrypoint: "/bin/bash"
-    always-pull: true
-    propagate-environment: true
-    gpus: all
-    environment:
-      - HF_HOME=/mnt/vllm-ci
-      - HF_TOKEN
-    volumes:
-      - /dev/shm:/dev/shm
-      - /mnt/vllm-ci:/mnt/vllm-ci
-    mount-buildkite-agent: true
-
 steps:
 - input: "Input information"
   key: input-information
@@ -40,8 +26,8 @@ steps:
         - label: "H200 - Kimi-K2.5"
           value: "h200_kimi-k2.5"
 
-- label: "Bootstrap"
-  command: ./.buildkite/bootstrap.sh
+- label: "Bootstrap nCompass"
+  command: ./.buildkite/bootstrap_ncompass.sh
   agents:
     queue: small_cpu_queue_postmerge
   depends_on: input-information

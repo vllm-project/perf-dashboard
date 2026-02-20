@@ -1,0 +1,53 @@
+definitions:
+  docker-common-h200: &docker-common-h200
+    entrypoint: "/bin/bash"
+    always-pull: true
+    propagate-environment: true
+    gpus: all
+    environment:
+      - HF_HOME=/mnt/vllm-ci
+      - HF_TOKEN
+      - NCOMPASS_CACHE_DIR
+      - NCOMPASS_PROFILER_TYPE=NSYS
+      - NCOMPASS_SHARE_COMMAND
+      - NUM_PROMPTS_MULTIPLIER
+      - WORKLOAD_MODE
+      - PROFILE_CASES
+      - SUPABASE_URL
+      - SUPABASE_ANON_KEY
+      - SUPABASE_BUCKET
+    volumes:
+      - /dev/shm:/dev/shm
+      - /mnt/vllm-ci:/mnt/vllm-ci
+    mount-buildkite-agent: true
+
+steps:
+- group: "nCompass NSYS Profile - H200 - Qwen3.5-397B-A17B-FP8"
+  steps:
+  - label: "nCompass NSYS Profile - Qwen/Qwen3.5-397B-A17B - FP8 - TP{{ matrix.tensor_parallel_size }} - CONC{{ matrix.concurrency }} - ISL{{ matrix.input_sequence_length }} - OSL{{ matrix.output_sequence_length }}"
+    retry:
+      manual: true
+    agents:
+      queue: perf-h200
+    plugins:
+      - docker#v5.2.0:
+          <<: *docker-common-h200
+          image: $IMAGE
+          environment:
+            - INPUT_LEN={{ matrix.input_sequence_length }}
+            - OUTPUT_LEN={{ matrix.output_sequence_length }}
+            - CONCURRENCY={{ matrix.concurrency }}
+          command:
+            - "-c"
+            - "pip install supabase ncompass && ./benchmark/run_ncompass_profile.sh --image $IMAGE --model Qwen/Qwen3.5-397B-A17B-FP8 --tp {{ matrix.tensor_parallel_size }} --output-dir benchmark/results/ncompass"
+    matrix:
+      setup:
+        concurrency:
+          - "4"
+          - "32"
+        input_sequence_length:
+          - "1024"
+        output_sequence_length:
+          - "1024"
+        tensor_parallel_size:
+          - "8"
