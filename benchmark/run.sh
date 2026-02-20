@@ -28,6 +28,7 @@ Required:
   --model MODEL           HuggingFace model name
   --image IMAGE           vLLM Docker image
   --tp TP                 Tensor parallel size
+  --precision PRECISION   Precision (fp4, fp8, fp16)
   --isl ISL               Input sequence length
   --osl OSL               Output sequence length
   --conc CONC             Max concurrency
@@ -43,7 +44,7 @@ Optional:
 
 Example:
   ./run.sh --model openai/gpt-oss-120b --image vllm/vllm-openai:v0.13.0 \\
-           --tp 8 --isl 1024 --osl 1024 --conc 64 \\
+           --tp 8 --precision fp4 --isl 1024 --osl 1024 --conc 64 \\
            --gpu-mem-util 0.9 --random-range-ratio 1.0 \\
            --hf-cache /dev/shm/.cache/huggingface --config configs/h200_gpt_oss.yaml
 EOF
@@ -56,6 +57,7 @@ while [[ $# -gt 0 ]]; do
         --model)           MODEL="$2";           shift 2 ;;
         --image)           IMAGE="$2";           shift 2 ;;
         --tp)              TP="$2";              shift 2 ;;
+        --precision)       PRECISION="$2";       shift 2 ;;
         --isl)             ISL="$2";             shift 2 ;;
         --osl)             OSL="$2";             shift 2 ;;
         --conc)            CONC="$2";            shift 2 ;;
@@ -75,6 +77,7 @@ MISSING=()
 [[ -z "$MODEL" ]]              && MISSING+=("--model")
 [[ -z "$IMAGE" ]]              && MISSING+=("--image")
 [[ -z "$TP" ]]                 && MISSING+=("--tp")
+[[ -z "$PRECISION" ]]          && MISSING+=("--precision")
 [[ -z "$ISL" ]]                && MISSING+=("--isl")
 [[ -z "$OSL" ]]                && MISSING+=("--osl")
 [[ -z "$CONC" ]]               && MISSING+=("--conc")
@@ -99,7 +102,7 @@ fi
 
 NUM_PROMPTS=$((CONC * 10))
 NUM_WARMUPS=$((CONC * 2))
-RESULT_FILENAME="${MODEL}_tp${TP}_isl${ISL}_osl${OSL}_conc${CONC}"
+RESULT_FILENAME="${MODEL}_${PRECISION}_tp${TP}_isl${ISL}_osl${OSL}_conc${CONC}"
 
 mkdir -p "$OUTPUT_DIR"
 
@@ -108,6 +111,7 @@ echo "vLLM Benchmark"
 echo "============================================="
 echo " Model:          $MODEL"
 echo " TP:             $TP"
+echo " Precision:      $PRECISION"
 echo " ISL:            $ISL"
 echo " OSL:            $OSL"
 echo " Concurrency:    $CONC"
@@ -144,7 +148,9 @@ trap cleanup EXIT
 # ─── Launch vLLM server ─────────────────────────────────────────────────────
 echo ""
 echo "Launching vLLM server (host mode)..."
-export VLLM_MXFP4_USE_MARLIN=1
+if [ "$PRECISION" = "fp4" ]; then
+    export VLLM_MXFP4_USE_MARLIN=1
+fi
 # export TORCH_CUDA_ARCH_LIST="9.0"
 
 PYTHONNOUSERSITE=1 vllm serve "$MODEL" \
@@ -239,7 +245,7 @@ python3 "${SCRIPT_DIR}/process_result.py" \
     --tp "$TP" \
     --conc "$CONC" \
     --framework vllm \
-    --precision fp4 \
+    --precision ${PRECISION} \
     --model "$MODEL" \
     --image "$IMAGE" \
     --isl "$ISL" \

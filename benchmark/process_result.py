@@ -108,6 +108,7 @@ def main():
         }
     ]
 
+    print("Data to send:", data)
     serialized_objects = [{k: json.dumps(v) for k,v in i.items()} for i in JSON_OBJECT]
 
     import requests
