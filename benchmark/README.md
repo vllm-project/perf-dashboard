@@ -5,58 +5,66 @@ Self-contained benchmark for running GPT-OSS-120B FP4 on H200 with vLLM. No depe
 ## Requirements
 
 - NVIDIA H200 GPU(s)
-- **Docker mode** (default): Docker with NVIDIA Container Toolkit
-- **Host mode** (`--host-mode`): vLLM installed locally (`pip install vllm`)
+- vLLM installed locally (`pip install vllm`)
 - Python 3.10+ with `numpy`, `aiohttp`, `tqdm`, `transformers`
 - HuggingFace access token for gated models (set `HF_TOKEN`)
 
 ## Quickstart
 
 ```bash
-# Docker mode (default) — pulls vLLM image and runs everything
-./benchmark/run.sh
-
-# Host mode — uses locally installed vLLM
-./benchmark/run.sh --host-mode
-
-# Custom parameters
-./benchmark/run.sh --tp 4 --isl 8192 --osl 1024 --conc 32
+./benchmark/run.sh \
+  --model openai/gpt-oss-120b \
+  --image vllm/vllm-openai:v0.13.0 \
+  --tp 8 --isl 1024 --osl 1024 --conc 64 \
+  --gpu-mem-util 0.9 --random-range-ratio 1.0 \
+  --hf-cache /dev/shm/.cache/huggingface
 ```
 
 ## CLI Reference
 
+### Required
+
+| Option | Description |
+|---|---|
+| `--model` | HuggingFace model name |
+| `--image` | vLLM Docker image |
+| `--tp` | Tensor parallel size |
+| `--isl` | Input sequence length |
+| `--osl` | Output sequence length |
+| `--conc` | Max concurrency |
+| `--gpu-mem-util` | GPU memory utilization |
+| `--random-range-ratio` | Random range ratio for input/output lengths |
+| `--hf-cache` | HuggingFace cache directory |
+
+### Optional
+
 | Option | Default | Description |
 |---|---|---|
-| `--model` | `openai/gpt-oss-120b` | HuggingFace model name |
-| `--image` | `vllm/vllm-openai:v0.13.0` | vLLM Docker image |
-| `--tp` | `8` | Tensor parallel size |
-| `--isl` | `1024` | Input sequence length |
-| `--osl` | `1024` | Output sequence length |
-| `--conc` | `64` | Max concurrency |
 | `--port` | `8888` | Server port |
 | `--output-dir` | `benchmark/results` | Directory for results |
-| `--gpu-mem-util` | `0.9` | GPU memory utilization |
-| `--host-mode` | off | Use host vLLM instead of Docker |
-| `--random-range-ratio` | `1.0` | Random range ratio for input/output lengths |
-| `--hf-cache` | `~/.cache/huggingface` | HuggingFace cache directory |
 
 ## Example Sweep
 
 ```bash
 # Concurrency sweep at TP=8, ISL/OSL=1024
 for c in 4 8 16 32 64; do
-  ./benchmark/run.sh --conc $c --output-dir results/conc_sweep
+  ./benchmark/run.sh \
+    --model openai/gpt-oss-120b --image vllm/vllm-openai:v0.13.0 \
+    --tp 8 --isl 1024 --osl 1024 --conc $c \
+    --gpu-mem-util 0.9 --random-range-ratio 1.0 \
+    --hf-cache /dev/shm/.cache/huggingface \
+    --output-dir results/conc_sweep
 done
 
 # TP sweep at CONC=64, ISL/OSL=1024
 for tp in 2 4 8; do
-  ./benchmark/run.sh --tp $tp --output-dir results/tp_sweep
+  ./benchmark/run.sh \
+    --model openai/gpt-oss-120b --image vllm/vllm-openai:v0.13.0 \
+    --tp $tp --isl 1024 --osl 1024 --conc 64 \
+    --gpu-mem-util 0.9 --random-range-ratio 1.0 \
+    --hf-cache /dev/shm/.cache/huggingface \
+    --output-dir results/tp_sweep
 done
-
-# Sequence length configurations (from CI)
-./benchmark/run.sh --isl 1024 --osl 1024
-./benchmark/run.sh --isl 1024 --osl 8192
-./benchmark/run.sh --isl 8192 --osl 1024
 ```
 
 ## Output Format

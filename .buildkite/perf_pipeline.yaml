@@ -1,5 +1,8 @@
 steps:
-- label: "{{ matrix.model }} FP4 - {{ matrix.image }} - TP{{ matrix.tensor_parallel_size }} - CONC{{ matrix.concurrency }} - ISL{{ matrix.input_sequence_length }} - OSL{{ matrix.output_sequence_length }}"
+- block: "Run H200 - GPT-OSS-120B sweep"
+  key: block-h200-gpt-oss
+- label: "H200: {{ matrix.model }} FP4 - {{ matrix.image }} - TP{{ matrix.tensor_parallel_size }} - CONC{{ matrix.concurrency }} - ISL{{ matrix.input_sequence_length }} - OSL{{ matrix.output_sequence_length }}"
+  depends_on: block-h200-gpt-oss
   retry:
     manual: true
   agents:
@@ -8,7 +11,20 @@ steps:
     - docker#v5.2.0:
         image: "{{ matrix.image }}"
         entrypoint: "/bin/bash"
-        command: ["-c", "./benchmark/run.sh --image {{ matrix.image }} --model {{ matrix.model }} --conc {{ matrix.concurrency }} --isl {{ matrix.input_sequence_length }} --osl {{ matrix.output_sequence_length }} --tp {{ matrix.tensor_parallel_size }}"]
+        command:
+          - -c
+          - |
+            ./benchmark/run.sh \
+              --image {{ matrix.image }} \
+              --model {{ matrix.model }} \
+              --conc {{ matrix.concurrency }} \
+              --isl {{ matrix.input_sequence_length }} \
+              --osl {{ matrix.output_sequence_length }} \
+              --tp {{ matrix.tensor_parallel_size }} \
+              --gpu-mem-util 0.9 \
+              --random-range-ratio 1.0 \
+              --hf-cache /dev/shm/ \
+              --config benchmark/configs/h200_gpt_oss.yaml
         always-pull: true
         propagate-environment: true
         gpus: all
@@ -28,6 +44,66 @@ steps:
         - "vllm/vllm-openai:v0.10.2"
       model:
         - "openai/gpt-oss-120b"
+      concurrency:
+        - "4"
+        - "8"
+        - "16"
+        - "32"
+        - "64"
+      input_sequence_length:
+        - "1024"
+      output_sequence_length:
+        - "1024"
+      tensor_parallel_size:
+        - "1"
+        - "2"
+        - "4"
+        - "8"
+
+- block: "Run H200 - Qwen3.5 sweep"
+  key: block-h200-qwen35
+- label: "H200: {{ matrix.model }} FP4 - {{ matrix.image }} - TP{{ matrix.tensor_parallel_size }} - CONC{{ matrix.concurrency }} - ISL{{ matrix.input_sequence_length }} - OSL{{ matrix.output_sequence_length }}"
+  depends_on: block-h200-qwen35
+  retry:
+    manual: true
+  agents:
+    queue: perf-h200
+  plugins:
+    - docker#v5.2.0:
+        image: "{{ matrix.image }}"
+        entrypoint: "/bin/bash"
+        command:
+          - -c
+          - |
+            ./benchmark/run.sh \
+              --image {{ matrix.image }} \
+              --model {{ matrix.model }} \
+              --conc {{ matrix.concurrency }} \
+              --isl {{ matrix.input_sequence_length }} \
+              --osl {{ matrix.output_sequence_length }} \
+              --tp {{ matrix.tensor_parallel_size }} \
+              --gpu-mem-util 0.9 \
+              --random-range-ratio 1.0 \
+              --hf-cache /dev/shm/
+        always-pull: true
+        propagate-environment: true
+        gpus: all
+        environment:
+        - HF_HOME=/dev/shm/
+        - HF_TOKEN
+        - DATABRICKS_WORKSPACE_URL
+        - ZEROBUS_INGEST_URL
+        - ACCESS_TOKEN
+        - TABLE
+        volumes:
+        - /dev/shm:/dev/shm
+        mount-buildkite-agent: true
+  matrix:
+    setup:
+      image:
+        - "vllm/vllm-openai:qwen3_5"
+      model:
+        - "Qwen/Qwen3.5-397B-A17B"
       concurrency:
         - "4"
         - "8"

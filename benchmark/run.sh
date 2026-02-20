@@ -3,18 +3,21 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# ─── Defaults (match InferenceMAX CI config) ─────────────────────────────────
-MODEL="openai/gpt-oss-120b"
-IMAGE="vllm/vllm-openai:v0.13.0"
-TP=8
-ISL=1024
-OSL=1024
-CONC=64
+# ─── Defaults ─────────────────────────────────────────────────────────────────
 PORT=8888
 OUTPUT_DIR="${SCRIPT_DIR}/results"
-GPU_MEM_UTIL=0.9
-RANDOM_RANGE_RATIO=1.0
-HF_CACHE="${HF_HOME:-/dev/shm/.cache/huggingface}"
+
+# ─── Required (no defaults) ──────────────────────────────────────────────────
+MODEL=""
+IMAGE=""
+TP=""
+ISL=""
+OSL=""
+CONC=""
+GPU_MEM_UTIL=""
+RANDOM_RANGE_RATIO=""
+HF_CACHE=""
+CONFIG_FILE=""
 
 # ─── Usage ────────────────────────────────────────────────────────────────────
 usage() {
@@ -23,32 +26,28 @@ Usage: $(basename "$0") [OPTIONS]
 
 Run the GPT-OSS-120B FP4 vLLM benchmark on an H200 machine.
 
-Options:
-  --model MODEL           HuggingFace model name          (default: $MODEL)
-  --image IMAGE           vLLM Docker image                (default: $IMAGE)
-  --tp TP                 Tensor parallel size             (default: $TP)
-  --isl ISL               Input sequence length            (default: $ISL)
-  --osl OSL               Output sequence length           (default: $OSL)
-  --conc CONC             Max concurrency                  (default: $CONC)
+Required:
+  --model MODEL           HuggingFace model name
+  --image IMAGE           vLLM Docker image
+  --tp TP                 Tensor parallel size
+  --isl ISL               Input sequence length
+  --osl OSL               Output sequence length
+  --conc CONC             Max concurrency
+  --gpu-mem-util FLOAT    GPU memory utilization
+  --random-range-ratio R  Random range ratio
+  --hf-cache DIR          HuggingFace cache directory
+  --config CONFIG_FILE    vLLM config file
+
+Optional:
   --port PORT             Server port                      (default: $PORT)
   --output-dir DIR        Directory for results            (default: $OUTPUT_DIR)
-  --gpu-mem-util FLOAT    GPU memory utilization           (default: $GPU_MEM_UTIL)
-  --host-mode             Use host vLLM instead of Docker
-  --random-range-ratio R  Random range ratio               (default: $RANDOM_RANGE_RATIO)
-  --hf-cache DIR          HuggingFace cache directory      (default: $HF_CACHE)
   -h, --help              Show this help message
 
-Examples:
-  # Run with defaults (Docker mode, TP=8, ISL=1024, OSL=1024, CONC=64)
-  ./run.sh
-
-  # Run in host mode with custom parameters
-  ./run.sh --host-mode --tp 4 --isl 8192 --osl 1024 --conc 32
-
-  # Run a concurrency sweep
-  for c in 4 8 16 32 64; do
-    ./run.sh --conc \$c --output-dir results/sweep
-  done
+Example:
+  ./run.sh --model openai/gpt-oss-120b --image vllm/vllm-openai:v0.13.0 \\
+           --tp 8 --isl 1024 --osl 1024 --conc 64 \\
+           --gpu-mem-util 0.9 --random-range-ratio 1.0 \\
+           --hf-cache /dev/shm/.cache/huggingface --config configs/h200_gpt_oss.yaml
 EOF
     exit 0
 }
@@ -67,10 +66,29 @@ while [[ $# -gt 0 ]]; do
         --gpu-mem-util)    GPU_MEM_UTIL="$2";    shift 2 ;;
         --random-range-ratio) RANDOM_RANGE_RATIO="$2"; shift 2 ;;
         --hf-cache)        HF_CACHE="$2";        shift 2 ;;
+        --config)          CONFIG_FILE="$2";      shift 2 ;;
         -h|--help)         usage ;;
         *)                 echo "Unknown option: $1"; usage ;;
     esac
 done
+
+# ─── Validate required args ──────────────────────────────────────────────────
+MISSING=()
+[[ -z "$MODEL" ]]              && MISSING+=("--model")
+[[ -z "$IMAGE" ]]              && MISSING+=("--image")
+[[ -z "$TP" ]]                 && MISSING+=("--tp")
+[[ -z "$ISL" ]]                && MISSING+=("--isl")
+[[ -z "$OSL" ]]                && MISSING+=("--osl")
+[[ -z "$CONC" ]]               && MISSING+=("--conc")
+[[ -z "$GPU_MEM_UTIL" ]]       && MISSING+=("--gpu-mem-util")
+[[ -z "$RANDOM_RANGE_RATIO" ]] && MISSING+=("--random-range-ratio")
+[[ -z "$HF_CACHE" ]]           && MISSING+=("--hf-cache")
+
+if [[ ${#MISSING[@]} -gt 0 ]]; then
+    echo "ERROR: Missing required options: ${MISSING[*]}"
+    echo ""
+    usage
+fi
 
 # ─── Derived values ──────────────────────────────────────────────────────────
 if [ "$ISL" = "1024" ] && [ "$OSL" = "1024" ]; then
@@ -101,16 +119,6 @@ echo " Num Warmups:    $NUM_WARMUPS"
 echo " Port:           $PORT"
 echo " Output Dir:     $OUTPUT_DIR"
 echo "============================================="
-
-# ─── Generate vLLM config.yaml ───────────────────────────────────────────────
-CONFIG_FILE="${OUTPUT_DIR}/config.yaml"
-cat > "$CONFIG_FILE" <<EOF
-async-scheduling: true
-no-enable-prefix-caching: true
-max-num-batched-tokens: 8192
-max-model-len: $MAX_MODEL_LEN
-EOF
-echo "Generated config: $CONFIG_FILE"
 
 # ─── Server log ──────────────────────────────────────────────────────────────
 SERVER_LOG="${OUTPUT_DIR}/server.log"
@@ -144,7 +152,7 @@ export VLLM_MXFP4_USE_MARLIN=1
 PYTHONNOUSERSITE=1 vllm serve "$MODEL" \
     --host 0.0.0.0 \
     --port "$PORT" \
-    --config "$CONFIG_FILE" \
+    ${CONFIG_FILE:+--config "$CONFIG_FILE"} \
     --gpu-memory-utilization "$GPU_MEM_UTIL" \
     --tensor-parallel-size "$TP" \
     --max-num-seqs "$CONC" \
