@@ -23,6 +23,7 @@ steps:
             ./benchmark/run.sh \
               --image {{ matrix.image }} \
               --model {{ matrix.model }} \
+              --precision fp4 \
               --conc {{ matrix.concurrency }} \
               --isl {{ matrix.input_sequence_length }} \
               --osl {{ matrix.output_sequence_length }} \
