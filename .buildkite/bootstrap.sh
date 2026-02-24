@@ -7,6 +7,7 @@ CONFIG=$(buildkite-agent meta-data get config)
 echo "Image: $IMAGE"
 echo "Config: $CONFIG"
 for config in $CONFIG; do
+    config=$(echo "$config" | tr -d '\r')
     IMAGE=$IMAGE buildkite-agent pipeline upload ./.buildkite/configs/${config}.yaml
 done
 exit 0
