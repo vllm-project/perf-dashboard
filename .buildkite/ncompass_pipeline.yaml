@@ -13,18 +13,6 @@ steps:
       options:
         - label: "H200 - GPT-OSS-120B"
           value: "h200_gpt-oss-120b"
-        - label: "B200 - GPT-OSS-120B"
-          value: "b200_gpt-oss-120b"
-        - label: "H200 - Qwen3.5-397B-A17B"
-          value: "h200_qwen-3.5"
-        - label: "B200 - Qwen3.5-397B-A17B"
-          value: "b200_qwen-3.5"
-        - label: "H200 - Qwen3.5-397B-A17B-FP8"
-          value: "h200_qwen-3.5_fp8"
-        - label: "B200 - Qwen3.5-397B-A17B-FP8"
-          value: "b200_qwen-3.5_fp8"
-        - label: "H200 - Kimi-K2.5"
-          value: "h200_kimi-k2.5"
 
 - label: "Bootstrap nCompass"
   command: ./.buildkite/bootstrap_ncompass.sh
