@@ -14,6 +14,7 @@ definitions:
 
 steps:
 - input: "Input information"
+  key: input-information
   fields:
     - text: "Image"
       key: "image"
@@ -43,3 +44,4 @@ steps:
     done
   agents:
     queue: small_cpu_queue_postmerge
+  depends_on: input-information
