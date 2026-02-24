@@ -20,8 +20,6 @@ steps:
       manual: true
     agents:
       queue: perf-h200
-    environment:
-      - IMAGE=$IMAGE
     plugins:
       - docker#v5.2.0:
           <<: *docker-common-h200
