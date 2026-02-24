@@ -1,3 +1,17 @@
+definitions:
+  docker-common-h200: &docker-common-h200
+    entrypoint: "/bin/bash"
+    always-pull: true
+    propagate-environment: true
+    gpus: all
+    environment:
+      - HF_HOME=/mnt/vllm-ci
+      - HF_TOKEN
+    volumes:
+      - /dev/shm:/dev/shm
+      - /mnt/vllm-ci:/mnt/vllm-ci
+    mount-buildkite-agent: true
+
 steps:
 - block: "Run H200 - GPT-OSS-120B sweep"
   key: block-h200-gpt-oss
@@ -21,8 +35,8 @@ steps:
       queue: perf-h200
     plugins:
       - docker#v5.2.0:
+          <<: *docker-common-h200
           image: "{{ matrix.image }}"
-          entrypoint: "/bin/bash"
           command:
             - -c
             - |
@@ -38,19 +52,6 @@ steps:
                 --random-range-ratio 1.0 \
                 --hf-cache /mnt/vllm-ci/ \
                 --config benchmark/configs/h200_gpt_oss.yaml
-          always-pull: true
-          propagate-environment: true
-          gpus: all
-          environment:
-          - HF_HOME=/mnt/vllm-ci
-          - HF_TOKEN
-          - DATABRICKS_WORKSPACE_URL
-          - ZEROBUS_INGEST_URL
-          - ACCESS_TOKEN
-          - TABLE
-          volumes:
-          - /dev/shm:/dev/shm
-          mount-buildkite-agent: true
     matrix:
       setup:
         image:
@@ -81,8 +82,8 @@ steps:
       queue: perf-h200
     plugins:
       - docker#v5.2.0:
+          <<: *docker-common-h200
           image: "{{ matrix.image }}"
-          entrypoint: "/bin/bash"
           command:
             - -c
             - |
@@ -97,19 +98,6 @@ steps:
                 --gpu-mem-util 0.9 \
                 --random-range-ratio 1.0 \
                 --hf-cache /mnt/vllm-ci/
-          always-pull: true
-          propagate-environment: true
-          gpus: all
-          environment:
-          - HF_HOME=/mnt/vllm-ci
-          - HF_TOKEN
-          - DATABRICKS_WORKSPACE_URL
-          - ZEROBUS_INGEST_URL
-          - ACCESS_TOKEN
-          - TABLE
-          volumes:
-          - /dev/shm:/dev/shm
-          mount-buildkite-agent: true
     matrix:
       setup:
         image:
@@ -126,7 +114,7 @@ steps:
           - "1024"
         tensor_parallel_size:
           - "8"
-  
+
   - label: "H200: Qwen/Qwen3.5-397B-A17B-FP8 - FP8 - {{ matrix.image }} - TP{{ matrix.tensor_parallel_size }} - CONC{{ matrix.concurrency }} - ISL{{ matrix.input_sequence_length }} - OSL{{ matrix.output_sequence_length }}"
     depends_on: block-h200-qwen35-397b-a17b-fp8
     retry:
@@ -135,8 +123,8 @@ steps:
       queue: perf-h200
     plugins:
       - docker#v5.2.0:
+          <<: *docker-common-h200
           image: "{{ matrix.image }}"
-          entrypoint: "/bin/bash"
           command:
             - -c
             - |
@@ -151,19 +139,6 @@ steps:
                 --gpu-mem-util 0.9 \
                 --random-range-ratio 1.0 \
                 --hf-cache /mnt/vllm-ci/
-          always-pull: true
-          propagate-environment: true
-          gpus: all
-          environment:
-          - HF_HOME=/mnt/vllm-ci
-          - HF_TOKEN
-          - DATABRICKS_WORKSPACE_URL
-          - ZEROBUS_INGEST_URL
-          - ACCESS_TOKEN
-          - TABLE
-          volumes:
-          - /dev/shm:/dev/shm
-          mount-buildkite-agent: true
     matrix:
       setup:
         image:
