@@ -33,8 +33,8 @@ steps:
 
 - command: |
     echo "Running benchmark..."
-    IMAGE=$$(buildkite-agent meta-data get "image")
-    CONFIG=$$(buildkite-agent meta-data get "config")
+    IMAGE=$(buildkite-agent meta-data get "image")
+    CONFIG=$(buildkite-agent meta-data get "config")
     echo "Image: $IMAGE"
     echo "Config: $CONFIG"
     for config in $CONFIG; do
