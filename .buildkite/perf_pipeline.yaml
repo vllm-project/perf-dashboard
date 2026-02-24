@@ -31,7 +31,8 @@ steps:
         - label: "H200 - Qwen3.5-397B-A17B-FP8"
           value: "h200_qwen35_397b_a17b_fp8"
 
-- command: |
+- label: "Bootstrap"
+  command: |
     echo "Running benchmark..."
     IMAGE=$(buildkite-agent meta-data get "image")
     CONFIG=$(buildkite-agent meta-data get "config")
