@@ -9,7 +9,7 @@ OUTPUT_DIR="${SCRIPT_DIR}/results"
 
 # ─── Required (no defaults) ──────────────────────────────────────────────────
 MODEL=""
-IMAGE=""
+IMAGE=$(buildkite-agent meta-data get "image")
 TP=""
 ISL=""
 OSL=""

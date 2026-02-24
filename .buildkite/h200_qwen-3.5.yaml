@@ -1,0 +1,84 @@
+- group: "Qwen3.5"
+  steps:
+  - label: "H200: Qwen/Qwen3.5-397B-A17B - BF16 - {{ matrix.image }} - TP{{ matrix.tensor_parallel_size }} - CONC{{ matrix.concurrency }} - ISL{{ matrix.input_sequence_length }} - OSL{{ matrix.output_sequence_length }}"
+    depends_on: block-h200-qwen35-397b-a17b
+    retry:
+      manual: true
+    agents:
+      queue: perf-h200
+    plugins:
+      - docker#v5.2.0:
+          <<: *docker-common-h200
+          image: "{{ matrix.image }}"
+          command:
+            - -c
+            - |
+              ./benchmark/run.sh \
+                --image {{ matrix.image }} \
+                --model Qwen/Qwen3.5-397B-A17B \
+                --precision bf16 \
+                --conc {{ matrix.concurrency }} \
+                --isl {{ matrix.input_sequence_length }} \
+                --osl {{ matrix.output_sequence_length }} \
+                --tp {{ matrix.tensor_parallel_size }} \
+                --gpu-mem-util 0.9 \
+                --random-range-ratio 1.0 \
+                --hf-cache /mnt/vllm-ci/
+    matrix:
+      setup:
+        image:
+          - "vllm/vllm-openai:qwen3_5"
+        concurrency:
+          - "4"
+          - "8"
+          - "16"
+          - "32"
+          - "64"
+        input_sequence_length:
+          - "1024"
+        output_sequence_length:
+          - "1024"
+        tensor_parallel_size:
+          - "8"
+
+  - label: "H200: Qwen/Qwen3.5-397B-A17B-FP8 - FP8 - {{ matrix.image }} - TP{{ matrix.tensor_parallel_size }} - CONC{{ matrix.concurrency }} - ISL{{ matrix.input_sequence_length }} - OSL{{ matrix.output_sequence_length }}"
+    depends_on: block-h200-qwen35-397b-a17b-fp8
+    retry:
+      manual: true
+    agents:
+      queue: perf-h200
+    plugins:
+      - docker#v5.2.0:
+          <<: *docker-common-h200
+          image: "{{ matrix.image }}"
+          command:
+            - -c
+            - |
+              ./benchmark/run.sh \
+                --image {{ matrix.image }} \
+                --model Qwen/Qwen3.5-397B-A17B-FP8 \
+                --precision fp8 \
+                --conc {{ matrix.concurrency }} \
+                --isl {{ matrix.input_sequence_length }} \
+                --osl {{ matrix.output_sequence_length }} \
+                --tp {{ matrix.tensor_parallel_size }} \
+                --gpu-mem-util 0.9 \
+                --random-range-ratio 1.0 \
+                --hf-cache /mnt/vllm-ci/
+    matrix:
+      setup:
+        image:
+          - "vllm/vllm-openai:qwen3_5"
+        concurrency:
+          - "4"
+          - "8"
+          - "16"
+          - "32"
+          - "64"
+        input_sequence_length:
+          - "1024"
+        output_sequence_length:
+          - "1024"
+        tensor_parallel_size:
+          - "8"
+          - "4"
