@@ -26,6 +26,8 @@ steps:
       options:
         - label: "H200 - GPT-OSS-120B"
           value: "h200_gpt_oss_120b"
+        - label: "B200 - GPT-OSS-120B"
+          value: "b200_gpt_oss_120b"
         - label: "H200 - Qwen3.5-397B-A17B"
           value: "h200_qwen35_397b_a17b"
         - label: "H200 - Qwen3.5-397B-A17B-FP8"
