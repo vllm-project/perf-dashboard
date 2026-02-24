@@ -27,6 +27,7 @@ Usage: $(basename "$0") [OPTIONS]
 Required:
   --model MODEL           HuggingFace model name
   --image IMAGE           vLLM Docker image
+  --device DEVICE         Device type (h200, b200)
   --tp TP                 Tensor parallel size
   --precision PRECISION   Precision (fp4, fp8, fp16)
   --isl ISL               Input sequence length
@@ -56,6 +57,7 @@ while [[ $# -gt 0 ]]; do
     case $1 in
         --model)           MODEL="$2";           shift 2 ;;
         --image)           IMAGE="$2";           shift 2 ;;
+        --device)          DEVICE="$2";          shift 2 ;;
         --tp)              TP="$2";              shift 2 ;;
         --precision)       PRECISION="$2";       shift 2 ;;
         --isl)             ISL="$2";             shift 2 ;;
@@ -76,6 +78,7 @@ done
 MISSING=()
 [[ -z "$MODEL" ]]              && MISSING+=("--model")
 [[ -z "$IMAGE" ]]              && MISSING+=("--image")
+[[ -z "$DEVICE" ]]             && MISSING+=("--device")
 [[ -z "$TP" ]]                 && MISSING+=("--tp")
 [[ -z "$PRECISION" ]]          && MISSING+=("--precision")
 [[ -z "$ISL" ]]                && MISSING+=("--isl")
@@ -110,6 +113,7 @@ echo "============================================="
 echo "vLLM Benchmark"
 echo "============================================="
 echo " Model:          $MODEL"
+echo " Device:         $DEVICE"
 echo " TP:             $TP"
 echo " Precision:      $PRECISION"
 echo " ISL:            $ISL"
@@ -241,7 +245,7 @@ DATE="$(date +'%Y-%m-%d %H:%M:%S')"
 python3 "${SCRIPT_DIR}/process_result.py" \
     --raw-result "${OUTPUT_DIR}/${RESULT_FILENAME}.json" \
     --output-dir "$OUTPUT_DIR" \
-    --device h200 \
+    --device "$DEVICE" \
     --date "$DATE" \
     --tp "$TP" \
     --conc "$CONC" \

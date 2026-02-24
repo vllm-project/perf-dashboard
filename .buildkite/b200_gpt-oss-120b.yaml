@@ -33,6 +33,7 @@ steps:
               ./benchmark/run.sh \
                 --image $IMAGE \
                 --model openai/gpt-oss-120b \
+                --device b200 \
                 --precision fp4 \
                 --conc {{ matrix.concurrency }} \
                 --isl {{ matrix.input_sequence_length }} \
