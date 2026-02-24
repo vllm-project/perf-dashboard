@@ -19,7 +19,6 @@ steps:
     - text: "Image"
       key: "image"
       required: true
-      default: "vllm/vllm-openai:v0.10.2"
     - select: "Config"
       key: "config"
       required: true
@@ -39,9 +38,9 @@ steps:
           value: "b200_qwen-3.5_fp8"
         - label: "H200 - Kimi-K2.5"
           value: "h200_kimi-k2.5"
-
 - label: "Bootstrap"
   command: ./.buildkite/bootstrap.sh
   agents:
     queue: small_cpu_queue_postmerge
   depends_on: input-information
+
