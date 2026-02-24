@@ -19,7 +19,7 @@ steps:
     retry:
       manual: true
     agents:
-      queue: B200
+      queue: perf-B200
     priority: 10
     plugins:
       - docker#v5.2.0:

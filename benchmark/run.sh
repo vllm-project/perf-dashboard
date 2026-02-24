@@ -207,6 +207,7 @@ echo "Running benchmark..."
 echo "  Num prompts: $NUM_PROMPTS"
 echo "  Num warmups: $NUM_WARMUPS"
 echo "  Max concurrency: $CONC"
+nvidia-smi || true
 
 python3 "${SCRIPT_DIR}/lib/benchmark_serving.py" \
     --model "$MODEL" \
