@@ -36,13 +36,13 @@ steps:
                 --tp {{ matrix.tensor_parallel_size }} \
                 --gpu-mem-util 0.9 \
                 --random-range-ratio 1.0 \
-                --hf-cache /dev/shm/ \
+                --hf-cache /mnt/vllm-ci/ \
                 --config benchmark/configs/h200_gpt_oss.yaml
           always-pull: true
           propagate-environment: true
           gpus: all
           environment:
-          - HF_HOME=/dev/shm/
+          - HF_HOME=/mnt/vllm-ci
           - HF_TOKEN
           - DATABRICKS_WORKSPACE_URL
           - ZEROBUS_INGEST_URL
@@ -96,12 +96,12 @@ steps:
                 --tp {{ matrix.tensor_parallel_size }} \
                 --gpu-mem-util 0.9 \
                 --random-range-ratio 1.0 \
-                --hf-cache /dev/shm/
+                --hf-cache /mnt/vllm-ci/
           always-pull: true
           propagate-environment: true
           gpus: all
           environment:
-          - HF_HOME=/dev/shm/
+          - HF_HOME=/mnt/vllm-ci
           - HF_TOKEN
           - DATABRICKS_WORKSPACE_URL
           - ZEROBUS_INGEST_URL
@@ -150,12 +150,12 @@ steps:
                 --tp {{ matrix.tensor_parallel_size }} \
                 --gpu-mem-util 0.9 \
                 --random-range-ratio 1.0 \
-                --hf-cache /dev/shm/
+                --hf-cache /mnt/vllm-ci/
           always-pull: true
           propagate-environment: true
           gpus: all
           environment:
-          - HF_HOME=/dev/shm/
+          - HF_HOME=/mnt/vllm-ci
           - HF_TOKEN
           - DATABRICKS_WORKSPACE_URL
           - ZEROBUS_INGEST_URL
@@ -180,3 +180,4 @@ steps:
           - "1024"
         tensor_parallel_size:
           - "8"
+          - "4"
