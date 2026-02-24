@@ -31,11 +31,12 @@ steps:
           value: "h200_qwen35_397b_a17b_fp8"
 
 - command: |
-    echo "Image: ${{ inputs.image }}"
-    echo "Config: ${{ inputs.config }}"
     echo "Running benchmark..."
     IMAGE=$$(buildkite-agent meta-data get "image")
-    for config in ${{ inputs.config }}; do
+    CONFIG=$$(buildkite-agent meta-data get "config")
+    echo "Image: $IMAGE"
+    echo "Config: $CONFIG"
+    for config in $CONFIG; do
       if [[ $config == "h200_gpt_oss_120b" ]]; then IMAGE=$IMAGE buildkite-agent pipeline upload ./.buildkite/h200_gpt-oss-120b.yaml; fi
       if [[ $config == "h200_qwen35_397b_a17b" ]]; then IMAGE=$IMAGE buildkite-agent pipeline upload ./.buildkite/h200_qwen35-397b-a17b.yaml; fi
       if [[ $config == "h200_qwen35_397b_a17b_fp8" ]]; then IMAGE=$IMAGE buildkite-agent pipeline upload ./.buildkite/h200_qwen35-397b-a17b-fp8.yaml; fi
