@@ -9,6 +9,14 @@ Self-contained benchmark for running GPT-OSS-120B FP4 on H200 with vLLM. No depe
 - Python 3.10+ with `numpy`, `aiohttp`, `tqdm`, `transformers`
 - HuggingFace access token for gated models (set `HF_TOKEN`)
 
+Install Python dependencies from repo root:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
 ## Quickstart
 
 ```bash
@@ -19,6 +27,54 @@ Self-contained benchmark for running GPT-OSS-120B FP4 on H200 with vLLM. No depe
   --gpu-mem-util 0.9 --random-range-ratio 1.0 \
   --hf-cache /dev/shm/.cache/huggingface
 ```
+
+## nCompass NSYS Profile Suite
+
+Use `run_ncompass_profile.sh` to run inference-only traces for pure decode/prefill
+workloads in CI or locally.
+
+```bash
+# Default suite:
+# - decode: INPUT_LEN=2, OUTPUT_LEN=1024, CONCURRENCY=1/32/256
+# - prefill: INPUT_LEN=8192, OUTPUT_LEN=1, CONCURRENCY=1
+./benchmark/run_ncompass_profile.sh
+
+# Decode-only sweep
+WORKLOAD_MODE=decode ./benchmark/run_ncompass_profile.sh
+
+# Prefill-only
+WORKLOAD_MODE=prefill ./benchmark/run_ncompass_profile.sh
+
+# Single custom case (BATCH_SIZE aliases CONCURRENCY)
+INPUT_LEN=4096 OUTPUT_LEN=16 CONCURRENCY=8 ./benchmark/run_ncompass_profile.sh
+```
+
+The profiled server is launched with nCompass + NSYS:
+
+```bash
+NCOMPASS_CACHE_DIR=<path-to-ncompass-configs> NCOMPASS_PROFILER_TYPE=NSYS \
+ncompass profile --nsys -- vllm serve ...
+```
+
+The runner polls server terminal logs to detect engine readiness, validates
+`/health`, runs `vllm bench serve`, collects `.nsys-rep` traces, and writes a
+nightly markdown report:
+
+- `benchmark/results/ncompass/nightly_ncompass_profile_report.md`
+
+If your nCompass NVTX/CudaProfiler configs are placeholders (for example `{}`),
+the runner automatically falls back to a direct `nsys profile` launch (capture
+starts immediately) so `.nsys-rep` files are still emitted. You can still
+override nCompass NSYS args explicitly with:
+
+```bash
+NCOMPASS_NSYS_ARGS='--capture-range=none' ./benchmark/run_ncompass_profile.sh
+```
+
+Optional sharing:
+
+- set `NCOMPASS_SHARE_COMMAND` with `{trace}` placeholder to generate share links
+- example: `NCOMPASS_SHARE_COMMAND='ncompass upload --share {trace}'`
 
 ## CLI Reference
 
@@ -106,6 +162,7 @@ Key computed fields:
 ```
 benchmark/
 ├── run.sh                      # Main entrypoint
+├── run_ncompass_profile.sh     # NSYS+nCompass profile suite entrypoint
 ├── process_result.py           # Post-processor (CLI-based)
 ├── lib/
 │   ├── benchmark_serving.py    # Benchmark client

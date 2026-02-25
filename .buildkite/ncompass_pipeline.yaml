@@ -1,0 +1,21 @@
+steps:
+- input: "Input information"
+  key: input-information
+  fields:
+    - text: "Image"
+      key: "image"
+      required: true
+      default: "vllm/vllm-openai:v0.10.2"
+    - select: "Config"
+      key: "config"
+      required: true
+      multiple: true
+      options:
+        - label: "H200 - GPT-OSS-120B"
+          value: "h200_gpt-oss-120b"
+
+- label: "Bootstrap nCompass"
+  command: ./.buildkite/bootstrap_ncompass.sh
+  agents:
+    queue: small_cpu_queue_postmerge
+  depends_on: input-information

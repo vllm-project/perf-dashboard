@@ -1,0 +1,40 @@
+{
+  "targets": {
+    "vllm.v1.worker.gpu.model_runner": {
+      "filePath": "",
+      "func_line_range_wrappings": [
+        {
+          "function": "execute_model",
+          "start_line": 1,
+          "end_line": 999999,
+          "context_class": "ncompass.trace.profile.nvtx.NvtxContext",
+          "context_values": [
+            {
+              "name": "name",
+              "value": "vllm_execute_model",
+              "type": "literal"
+            }
+          ]
+        }
+      ]
+    },
+    "vllm.v1.worker.gpu_model_runner": {
+      "filePath": "",
+      "func_line_range_wrappings": [
+        {
+          "function": "execute_model",
+          "start_line": 1,
+          "end_line": 999999,
+          "context_class": "ncompass.trace.profile.nvtx.NvtxContext",
+          "context_values": [
+            {
+              "name": "name",
+              "value": "vllm_execute_model",
+              "type": "literal"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

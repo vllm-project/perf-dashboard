@@ -1,2 +1,6 @@
 __pycache__/
 benchmark/results
+/.cache/
+/.venv/
+benchmark/ncompass-config/.ncompass_init.log
+.env

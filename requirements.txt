@@ -1,0 +1,13 @@
+# Core profiling + serving stack used by benchmark/run_ncompass_profile.sh
+ncompass==0.1.14
+vllm==0.15.1
+
+# Direct imports used by benchmark Python scripts
+numpy==2.2.6
+aiohttp==3.13.3
+tqdm==4.67.3
+transformers==4.57.6
+requests==2.32.5
+
+# Supabase Storage for trace uploads
+supabase>=2.0.0
