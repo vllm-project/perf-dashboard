@@ -163,6 +163,7 @@ PYTHONNOUSERSITE=1 vllm serve "$MODEL" \
     ${CONFIG_FILE:+--config "$CONFIG_FILE"} \
     --gpu-memory-utilization "$GPU_MEM_UTIL" \
     --tensor-parallel-size "$TP" \
+    --max-model-len "$MAX_MODEL_LEN" \
     --max-num-seqs "$CONC" \
     --disable-log-requests > "$SERVER_LOG" 2>&1 &
 SERVER_PID=$!
