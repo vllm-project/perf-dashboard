@@ -32,7 +32,7 @@ steps:
             - |
               ./benchmark/run.sh \
                 --image $IMAGE \
-                ${DATE:+--date "$DATE"} \
+                --date "$DATE" \
                 --model moonshotai/Kimi-K2.5 \
                 --device h200 \
                 --precision int4 \

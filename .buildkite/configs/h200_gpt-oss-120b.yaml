@@ -32,7 +32,7 @@ steps:
             - |
               ./benchmark/run.sh \
                 --image $IMAGE \
-                ${DATE:+--date "$DATE"} \
+                --date "$DATE" \
                 --model openai/gpt-oss-120b \
                 --device h200 \
                 --precision fp4 \

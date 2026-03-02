@@ -33,7 +33,7 @@ steps:
             - |
               ./benchmark/run.sh \
                 --image $IMAGE \
-                ${DATE:+--date "$DATE"} \
+                --date "$DATE" \
                 --model Qwen/Qwen3.5-397B-A17B \
                 --device b200 \
                 --precision bf16 \
