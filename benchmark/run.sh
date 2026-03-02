@@ -39,6 +39,7 @@ Required:
   --config CONFIG_FILE    vLLM config file
 
 Optional:
+  --date DATE             Timestamp for results            (default: current date/time)
   --port PORT             Server port                      (default: $PORT)
   --output-dir DIR        Directory for results            (default: $OUTPUT_DIR)
   -h, --help              Show this help message
@@ -63,6 +64,7 @@ while [[ $# -gt 0 ]]; do
         --isl)             ISL="$2";             shift 2 ;;
         --osl)             OSL="$2";             shift 2 ;;
         --conc)            CONC="$2";            shift 2 ;;
+        --date)            DATE="$2";            shift 2 ;;
         --port)            PORT="$2";            shift 2 ;;
         --output-dir)      OUTPUT_DIR="$2";      shift 2 ;;
         --gpu-mem-util)    GPU_MEM_UTIL="$2";    shift 2 ;;
@@ -241,7 +243,7 @@ fi
 # ─── Post-process results ───────────────────────────────────────────────────
 echo ""
 echo "Post-processing results..."
-DATE="$(date +'%Y-%m-%d %H:%M:%S')"
+DATE="${DATE:-$(date +'%Y-%m-%d %H:%M:%S')}"
 
 python3 "${SCRIPT_DIR}/process_result.py" \
     --raw-result "${OUTPUT_DIR}/${RESULT_FILENAME}.json" \

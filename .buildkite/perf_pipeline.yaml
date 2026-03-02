@@ -19,6 +19,10 @@ steps:
     - text: "Image"
       key: "image"
       required: true
+    - text: "Date"
+      key: "date"
+      required: false
+      hint: "Timestamp for results (e.g. 2025-07-01 12:00:00). Leave blank to use current date/time."
     - select: "Config"
       key: "config"
       required: true

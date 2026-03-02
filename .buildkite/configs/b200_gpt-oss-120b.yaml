@@ -27,11 +27,13 @@ steps:
           image: $IMAGE
           environment:
             - IMAGE=$IMAGE
+            - DATE=$DATE
           command:
             - -c
             - |
               ./benchmark/run.sh \
                 --image $IMAGE \
+                ${DATE:+--date "$DATE"} \
                 --model openai/gpt-oss-120b \
                 --device b200 \
                 --precision fp4 \

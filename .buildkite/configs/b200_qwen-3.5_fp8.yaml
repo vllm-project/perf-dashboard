@@ -27,11 +27,13 @@ steps:
           image: $IMAGE
           environment:
             - IMAGE=$IMAGE
+            - DATE=$DATE
           command:
             - -c
             - |
               ./benchmark/run.sh \
                 --image $IMAGE \
+                ${DATE:+--date "$DATE"} \
                 --model Qwen/Qwen3.5-397B-A17B-FP8 \
                 --device b200 \
                 --precision fp8 \

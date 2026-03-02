@@ -26,11 +26,13 @@ steps:
           image: $IMAGE
           environment:
             - IMAGE=$IMAGE
+            - DATE=$DATE
           command:
             - -c
             - |
               ./benchmark/run.sh \
                 --image $IMAGE \
+                ${DATE:+--date "$DATE"} \
                 --model Qwen/Qwen3.5-397B-A17B \
                 --device h200 \
                 --precision bf16 \
