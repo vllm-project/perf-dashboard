@@ -5,8 +5,10 @@ definitions:
     propagate-environment: true
     gpus: all
     environment:
-      - HF_HOME=/raid
+      - HF_HOME=/mnt/vllm-ci
       - HF_TOKEN
+      - IMAGE=$IMAGE
+      - DATE=$DATE
     volumes:
       - /dev/shm:/dev/shm
       - /raid:/raid
@@ -25,9 +27,6 @@ steps:
       - docker#v5.2.0:
           <<: *docker-common-b200
           image: $IMAGE
-          environment:
-            - IMAGE=$IMAGE
-            - DATE=$DATE
           command:
             - -c
             - |

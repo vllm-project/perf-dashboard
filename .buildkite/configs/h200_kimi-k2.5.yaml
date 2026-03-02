@@ -7,6 +7,8 @@ definitions:
     environment:
       - HF_HOME=/mnt/vllm-ci
       - HF_TOKEN
+      - IMAGE=$IMAGE
+      - DATE=$DATE
     volumes:
       - /dev/shm:/dev/shm
       - /mnt/vllm-ci:/mnt/vllm-ci
@@ -24,9 +26,6 @@ steps:
       - docker#v5.2.0:
           <<: *docker-common-h200
           image: $IMAGE
-          environment:
-            - IMAGE=$IMAGE
-            - DATE=$DATE
           command:
             - -c
             - |
