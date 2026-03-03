@@ -3,7 +3,6 @@ definitions:
     entrypoint: "/bin/bash"
     always-pull: true
     propagate-environment: true
-    gpus: "${BUILDKITE_PLUGIN_DOCKER_GPUS:-all}"
     environment:
       - HF_HOME=/mnt/vllm-ci
       - HF_TOKEN
