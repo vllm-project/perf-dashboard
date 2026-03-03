@@ -154,10 +154,20 @@ trap cleanup EXIT
 # ─── Launch vLLM server ─────────────────────────────────────────────────────
 echo ""
 echo "Launching vLLM server (host mode)..."
-if [ "$PRECISION" = "fp4" ]; then
-    export VLLM_MXFP4_USE_MARLIN=1
+if [[ "$MODEL" == "openai/gpt-oss-120b" ]]; then
+    if [ "$DEVICE" = "h200" ]; then
+        export VLLM_MXFP4_USE_MARLIN=1
+        export TORCH_CUDA_ARCH_LIST="9.0"
+    elif [ "$DEVICE" = "b200" ]; then
+        export VLLM_USE_FLASHINFER_MOE_MXFP4_MXFP8=1
+        export TORCH_CUDA_ARCH_LIST="10.0"
+    fi
 fi
-# export TORCH_CUDA_ARCH_LIST="9.0"
+# Skip --max-num-seqs if already specified in config file
+MAX_NUM_SEQS_ARGS=(--max-num-seqs "$CONC")
+if [[ -n "$CONFIG_FILE" ]] && grep -q '^max-num-seqs:' "$CONFIG_FILE" 2>/dev/null; then
+    MAX_NUM_SEQS_ARGS=()
+fi
 
 PYTHONNOUSERSITE=1 vllm serve "$MODEL" \
     --host 0.0.0.0 \
@@ -166,7 +176,7 @@ PYTHONNOUSERSITE=1 vllm serve "$MODEL" \
     --gpu-memory-utilization "$GPU_MEM_UTIL" \
     --tensor-parallel-size "$TP" \
     --max-model-len "$MAX_MODEL_LEN" \
-    --max-num-seqs "$CONC" \
+    "${MAX_NUM_SEQS_ARGS[@]}" \
     --disable-log-requests > "$SERVER_LOG" 2>&1 &
 SERVER_PID=$!
 echo "vLLM server started (PID $SERVER_PID)"
