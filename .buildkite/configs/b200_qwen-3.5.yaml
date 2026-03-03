@@ -29,6 +29,7 @@ steps:
           command:
             - -c
             - |
+              nvidia-smi || true
               ./benchmark/run.sh \
                 --image $IMAGE \
                 --date "$DATE" \
