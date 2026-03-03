@@ -169,7 +169,7 @@ if [[ -n "$CONFIG_FILE" ]] && grep -q '^max-num-seqs:' "$CONFIG_FILE" 2>/dev/nul
     MAX_NUM_SEQS_ARGS=()
 fi
 
-PYTHONNOUSERSITE=1 vllm serve "$MODEL" \
+PYTHONNOUSERSITE=1 VLLM_SERVER_TIMEOUT=1800 vllm serve "$MODEL" \
     --host 0.0.0.0 \
     --port "$PORT" \
     ${CONFIG_FILE:+--config "$CONFIG_FILE"} \
@@ -184,7 +184,7 @@ echo "vLLM server started (PID $SERVER_PID)"
 # ─── Wait for server health ─────────────────────────────────────────────────
 echo ""
 echo "Waiting for vLLM server to be ready..."
-MAX_WAIT=600  # 10 minutes
+MAX_WAIT=1800  # 30 minutes
 INTERVAL=5
 ELAPSED=0
 
