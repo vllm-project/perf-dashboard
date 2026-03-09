@@ -1,0 +1,59 @@
+definitions:
+  docker-common-b200: &docker-common-b200
+    entrypoint: "/bin/bash"
+    always-pull: true
+    propagate-environment: true
+    environment:
+      - HF_HOME=/mnt/vllm-ci
+      - HF_TOKEN
+      - IMAGE=$IMAGE
+      - DATE=$DATE
+    volumes:
+      - /dev/shm:/dev/shm
+      - /raid:/raid
+    mount-buildkite-agent: true
+
+steps:
+- group: "B200 - Qwen3.5-397B-A17B"
+  steps:
+  - label: "B200: Qwen/Qwen3.5-397B-A17B - $$IMAGE - BF16 - TP{{ matrix.tensor_parallel_size }} - CONC{{ matrix.concurrency }} - ISL{{ matrix.input_sequence_length }} - OSL{{ matrix.output_sequence_length }}"
+    retry:
+      manual: true
+    agents:
+      queue: perf-B200
+    priority: 10
+    plugins:
+      - docker#v5.2.0:
+          <<: *docker-common-b200
+          image: $IMAGE
+          command:
+            - -c
+            - |
+              nvidia-smi || true
+              ./benchmark/run.sh \
+                --image $IMAGE \
+                --date "$DATE" \
+                --model Qwen/Qwen3.5-397B-A17B \
+                --device b200 \
+                --precision bf16 \
+                --conc {{ matrix.concurrency }} \
+                --isl {{ matrix.input_sequence_length }} \
+                --osl {{ matrix.output_sequence_length }} \
+                --tp {{ matrix.tensor_parallel_size }} \
+                --gpu-mem-util 0.9 \
+                --random-range-ratio 1.0 \
+                --hf-cache /raid/
+    matrix:
+      setup:
+        concurrency:
+          - "4"
+          - "8"
+          - "16"
+          - "32"
+          - "64"
+        input_sequence_length:
+          - "1024"
+        output_sequence_length:
+          - "1024"
+        tensor_parallel_size:
+          - "8"

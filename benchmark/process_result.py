@@ -8,6 +8,7 @@ import argparse
 import json
 import os
 import sys
+import requests
 
 
 def main():
@@ -18,8 +19,10 @@ def main():
                         help="Path to the raw benchmark JSON file")
     parser.add_argument("--output-dir", default=".",
                         help="Directory to write aggregated result")
-    parser.add_argument("--hw", required=True,
-                        help="Hardware type (e.g., h200)")
+    parser.add_argument("--device", required=True,
+                        help="Device type (e.g., h200)")
+    parser.add_argument("--date", required=True,
+                        help="Date of the benchmark run")
     parser.add_argument("--tp", type=int, required=True,
                         help="Tensor parallel size")
     parser.add_argument("--conc", type=int, default=None,
@@ -56,7 +59,8 @@ def main():
 
     # Build aggregated data
     data = {
-        "hw": args.hw,
+        "date": args.date,
+        "device": args.device,
         "conc": conc,
         "image": args.image,
         "model": bmk_result.get("model_id", args.model),
@@ -64,10 +68,10 @@ def main():
         "framework": args.framework,
         "precision": args.precision,
         "spec_decoding": args.spec_decoding,
-        "disagg": False,
+        "disagg": "false",
         "isl": args.isl,
         "osl": args.osl,
-        "is_multinode": False,
+        "is_multinode": "false",
         "tp": args.tp,
         "ep": 1,
         "dp_attention": "false",
@@ -90,6 +94,37 @@ def main():
             data[key.replace("_ms", "").replace("tpot", "intvty")] = (
                 1000.0 / float(value)
             )
+
+    # Send data to DB
+    DATABRICKS_WORKSPACE_URL = os.getenv("DATABRICKS_WORKSPACE_URL")
+    ZEROBUS_INGEST_URL = os.getenv("ZEROBUS_INGEST_URL")
+    CATALOG = "vllm_data_warehouse"
+    SCHEMA = "default"
+    TABLE = os.getenv("TABLE")
+    access_token = os.getenv("ACCESS_TOKEN")
+    JSON_OBJECT = [
+        {
+            "message": data
+        }
+    ]
+
+    print("Data to send:", data)
+    serialized_objects = [{k: json.dumps(v) for k,v in i.items()} for i in JSON_OBJECT]
+
+    import requests
+
+    try:
+        endpoint = "https://vllm-perf-data-ingest-224810116257.us-central1.run.app/"
+        headers = {
+            "Content-Type": "application/json",
+            "X-Source": "Manual Test"
+        }
+        payload = data
+        response = requests.post(endpoint, headers=headers, json=payload, timeout=10)
+        response.raise_for_status()
+        print(f"Successfully sent result to ingestion endpoint (status={response.status_code})")
+    except Exception as e:
+        print(f"Warning: Failed to POST to ingest endpoint: {e}")
 
     # Write output
     raw_basename = os.path.splitext(os.path.basename(args.raw_result))[0]

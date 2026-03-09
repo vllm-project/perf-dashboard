@@ -3,53 +3,52 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# ─── Defaults (match InferenceMAX CI config) ─────────────────────────────────
-MODEL="openai/gpt-oss-120b"
-IMAGE="vllm/vllm-openai:v0.13.0"
-TP=8
-ISL=1024
-OSL=1024
-CONC=64
+# ─── Defaults ─────────────────────────────────────────────────────────────────
 PORT=8888
 OUTPUT_DIR="${SCRIPT_DIR}/results"
-GPU_MEM_UTIL=0.9
-HOST_MODE=false
-RANDOM_RANGE_RATIO=1.0
-HF_CACHE="${HF_HOME:-${HOME}/.cache/huggingface}"
+
+# ─── Required (no defaults) ──────────────────────────────────────────────────
+MODEL=""
+IMAGE=$(buildkite-agent meta-data get "image")
+TP=""
+ISL=""
+OSL=""
+CONC=""
+GPU_MEM_UTIL=""
+RANDOM_RANGE_RATIO=""
+HF_CACHE=""
+CONFIG_FILE=""
 
 # ─── Usage ────────────────────────────────────────────────────────────────────
 usage() {
     cat <<EOF
 Usage: $(basename "$0") [OPTIONS]
 
-Run the GPT-OSS-120B FP4 vLLM benchmark on an H200 machine.
+Required:
+  --model MODEL           HuggingFace model name
+  --image IMAGE           vLLM Docker image
+  --device DEVICE         Device type (h200, b200)
+  --tp TP                 Tensor parallel size
+  --precision PRECISION   Precision (fp4, fp8, fp16)
+  --isl ISL               Input sequence length
+  --osl OSL               Output sequence length
+  --conc CONC             Max concurrency
+  --gpu-mem-util FLOAT    GPU memory utilization
+  --random-range-ratio R  Random range ratio
+  --hf-cache DIR          HuggingFace cache directory
+  --config CONFIG_FILE    vLLM config file
 
-Options:
-  --model MODEL           HuggingFace model name          (default: $MODEL)
-  --image IMAGE           vLLM Docker image                (default: $IMAGE)
-  --tp TP                 Tensor parallel size             (default: $TP)
-  --isl ISL               Input sequence length            (default: $ISL)
-  --osl OSL               Output sequence length           (default: $OSL)
-  --conc CONC             Max concurrency                  (default: $CONC)
+Optional:
+  --date DATE             Timestamp for results            (default: current date/time)
   --port PORT             Server port                      (default: $PORT)
   --output-dir DIR        Directory for results            (default: $OUTPUT_DIR)
-  --gpu-mem-util FLOAT    GPU memory utilization           (default: $GPU_MEM_UTIL)
-  --host-mode             Use host vLLM instead of Docker
-  --random-range-ratio R  Random range ratio               (default: $RANDOM_RANGE_RATIO)
-  --hf-cache DIR          HuggingFace cache directory      (default: $HF_CACHE)
   -h, --help              Show this help message
 
-Examples:
-  # Run with defaults (Docker mode, TP=8, ISL=1024, OSL=1024, CONC=64)
-  ./run.sh
-
-  # Run in host mode with custom parameters
-  ./run.sh --host-mode --tp 4 --isl 8192 --osl 1024 --conc 32
-
-  # Run a concurrency sweep
-  for c in 4 8 16 32 64; do
-    ./run.sh --conc \$c --output-dir results/sweep
-  done
+Example:
+  ./run.sh --model openai/gpt-oss-120b --image vllm/vllm-openai:v0.13.0 \\
+           --tp 8 --precision fp4 --isl 1024 --osl 1024 --conc 64 \\
+           --gpu-mem-util 0.9 --random-range-ratio 1.0 \\
+           --hf-cache /dev/shm/.cache/huggingface --config configs/h200_gpt_oss.yaml
 EOF
     exit 0
 }
@@ -59,20 +58,43 @@ while [[ $# -gt 0 ]]; do
     case $1 in
         --model)           MODEL="$2";           shift 2 ;;
         --image)           IMAGE="$2";           shift 2 ;;
+        --device)          DEVICE="$2";          shift 2 ;;
         --tp)              TP="$2";              shift 2 ;;
+        --precision)       PRECISION="$2";       shift 2 ;;
         --isl)             ISL="$2";             shift 2 ;;
         --osl)             OSL="$2";             shift 2 ;;
         --conc)            CONC="$2";            shift 2 ;;
+        --date)            DATE="$2";            shift 2 ;;
         --port)            PORT="$2";            shift 2 ;;
         --output-dir)      OUTPUT_DIR="$2";      shift 2 ;;
         --gpu-mem-util)    GPU_MEM_UTIL="$2";    shift 2 ;;
-        --host-mode)       HOST_MODE=true;       shift ;;
         --random-range-ratio) RANDOM_RANGE_RATIO="$2"; shift 2 ;;
         --hf-cache)        HF_CACHE="$2";        shift 2 ;;
+        --config)          CONFIG_FILE="$2";      shift 2 ;;
         -h|--help)         usage ;;
         *)                 echo "Unknown option: $1"; usage ;;
     esac
 done
+
+# ─── Validate required args ──────────────────────────────────────────────────
+MISSING=()
+[[ -z "$MODEL" ]]              && MISSING+=("--model")
+[[ -z "$IMAGE" ]]              && MISSING+=("--image")
+[[ -z "$DEVICE" ]]             && MISSING+=("--device")
+[[ -z "$TP" ]]                 && MISSING+=("--tp")
+[[ -z "$PRECISION" ]]          && MISSING+=("--precision")
+[[ -z "$ISL" ]]                && MISSING+=("--isl")
+[[ -z "$OSL" ]]                && MISSING+=("--osl")
+[[ -z "$CONC" ]]               && MISSING+=("--conc")
+[[ -z "$GPU_MEM_UTIL" ]]       && MISSING+=("--gpu-mem-util")
+[[ -z "$RANDOM_RANGE_RATIO" ]] && MISSING+=("--random-range-ratio")
+[[ -z "$HF_CACHE" ]]           && MISSING+=("--hf-cache")
+
+if [[ ${#MISSING[@]} -gt 0 ]]; then
+    echo "ERROR: Missing required options: ${MISSING[*]}"
+    echo ""
+    usage
+fi
 
 # ─── Derived values ──────────────────────────────────────────────────────────
 if [ "$ISL" = "1024" ] && [ "$OSL" = "1024" ]; then
@@ -85,15 +107,17 @@ fi
 
 NUM_PROMPTS=$((CONC * 10))
 NUM_WARMUPS=$((CONC * 2))
-RESULT_FILENAME="gptoss_fp4_vllm_tp${TP}_isl${ISL}_osl${OSL}_conc${CONC}"
+RESULT_FILENAME="${MODEL}_${PRECISION}_tp${TP}_isl${ISL}_osl${OSL}_conc${CONC}"
 
 mkdir -p "$OUTPUT_DIR"
 
 echo "============================================="
-echo " GPT-OSS FP4 vLLM Benchmark"
+echo "vLLM Benchmark"
 echo "============================================="
 echo " Model:          $MODEL"
+echo " Device:         $DEVICE"
 echo " TP:             $TP"
+echo " Precision:      $PRECISION"
 echo " ISL:            $ISL"
 echo " OSL:            $OSL"
 echo " Concurrency:    $CONC"
@@ -102,19 +126,7 @@ echo " Num Prompts:    $NUM_PROMPTS"
 echo " Num Warmups:    $NUM_WARMUPS"
 echo " Port:           $PORT"
 echo " Output Dir:     $OUTPUT_DIR"
-echo " Mode:           $(if $HOST_MODE; then echo 'host'; else echo 'docker'; fi)"
 echo "============================================="
-
-# ─── Generate vLLM config.yaml ───────────────────────────────────────────────
-CONFIG_FILE="${OUTPUT_DIR}/config.yaml"
-cat > "$CONFIG_FILE" <<EOF
-async-scheduling: true
-no-enable-prefix-caching: true
-max-cudagraph-capture-size: 2048
-max-num-batched-tokens: 8192
-max-model-len: $MAX_MODEL_LEN
-EOF
-echo "Generated config: $CONFIG_FILE"
 
 # ─── Server log ──────────────────────────────────────────────────────────────
 SERVER_LOG="${OUTPUT_DIR}/server.log"
@@ -140,59 +152,39 @@ cleanup() {
 trap cleanup EXIT
 
 # ─── Launch vLLM server ─────────────────────────────────────────────────────
-if $HOST_MODE; then
-    echo ""
-    echo "Launching vLLM server (host mode)..."
-    export VLLM_MXFP4_USE_MARLIN=1
-    export TORCH_CUDA_ARCH_LIST="9.0"
-
-    PYTHONNOUSERSITE=1 vllm serve "$MODEL" \
-        --host 0.0.0.0 \
-        --port "$PORT" \
-        --config "$CONFIG_FILE" \
-        --gpu-memory-utilization "$GPU_MEM_UTIL" \
-        --tensor-parallel-size "$TP" \
-        --max-num-seqs "$CONC" \
-        --disable-log-requests > "$SERVER_LOG" 2>&1 &
-    SERVER_PID=$!
-    echo "vLLM server started (PID $SERVER_PID)"
-else
-    echo ""
-    echo "Launching vLLM server (Docker mode)..."
-    echo "Image: $IMAGE"
-
-    CONTAINER_ID=$(docker run -d \
-        --gpus all \
-        --ipc=host \
-        --ulimit memlock=-1 \
-        --ulimit stack=67108864 \
-        -p "${PORT}:${PORT}" \
-        -v "${HF_CACHE}:/root/.cache/huggingface" \
-        -v "${SCRIPT_DIR}/lib:/workspace/lib" \
-        -v "${OUTPUT_DIR}:/workspace/results" \
-        -e VLLM_MXFP4_USE_MARLIN=1 \
-        -e TORCH_CUDA_ARCH_LIST="9.0" \
-        -e HF_TOKEN="${HF_TOKEN:-}" \
-        "$IMAGE" \
-        vllm serve "$MODEL" \
-            --host 0.0.0.0 \
-            --port "$PORT" \
-            --config /workspace/results/config.yaml \
-            --gpu-memory-utilization "$GPU_MEM_UTIL" \
-            --tensor-parallel-size "$TP" \
-            --max-num-seqs "$CONC" \
-            --disable-log-requests)
-
-    echo "Docker container started: $CONTAINER_ID"
-
-    # Follow container logs in background
-    docker logs -f "$CONTAINER_ID" > "$SERVER_LOG" 2>&1 &
+echo ""
+echo "Launching vLLM server (host mode)..."
+if [[ "$MODEL" == "openai/gpt-oss-120b" ]]; then
+    if [ "$DEVICE" = "h200" ]; then
+        export VLLM_MXFP4_USE_MARLIN=1
+        export TORCH_CUDA_ARCH_LIST="9.0"
+    elif [ "$DEVICE" = "b200" ]; then
+        export VLLM_USE_FLASHINFER_MOE_MXFP4_MXFP8=1
+        export TORCH_CUDA_ARCH_LIST="10.0"
+    fi
 fi
+# Skip --max-num-seqs if already specified in config file
+MAX_NUM_SEQS_ARGS=(--max-num-seqs "$CONC")
+if [[ -n "$CONFIG_FILE" ]] && grep -q '^max-num-seqs:' "$CONFIG_FILE" 2>/dev/null; then
+    MAX_NUM_SEQS_ARGS=()
+fi
+
+PYTHONNOUSERSITE=1 VLLM_SERVER_TIMEOUT=1800 vllm serve "$MODEL" \
+    --host 0.0.0.0 \
+    --port "$PORT" \
+    ${CONFIG_FILE:+--config "$CONFIG_FILE"} \
+    --gpu-memory-utilization "$GPU_MEM_UTIL" \
+    --tensor-parallel-size "$TP" \
+    --max-model-len "$MAX_MODEL_LEN" \
+    "${MAX_NUM_SEQS_ARGS[@]}" \
+    --disable-log-requests > "$SERVER_LOG" 2>&1 &
+SERVER_PID=$!
+echo "vLLM server started (PID $SERVER_PID)"
 
 # ─── Wait for server health ─────────────────────────────────────────────────
 echo ""
 echo "Waiting for vLLM server to be ready..."
-MAX_WAIT=600  # 10 minutes
+MAX_WAIT=1800  # 30 minutes
 INTERVAL=5
 ELAPSED=0
 
@@ -209,20 +201,11 @@ while true; do
     fi
 
     # Check if server process is still alive
-    if $HOST_MODE; then
-        if [[ -n "$SERVER_PID" ]] && ! kill -0 "$SERVER_PID" 2>/dev/null; then
-            kill "$TAIL_PID" 2>/dev/null || true
-            echo "ERROR: vLLM server died before becoming healthy."
-            echo "Check logs: $SERVER_LOG"
-            exit 1
-        fi
-    else
-        if [[ -n "$CONTAINER_ID" ]] && ! docker ps -q --filter "id=$CONTAINER_ID" | grep -q .; then
-            kill "$TAIL_PID" 2>/dev/null || true
-            echo "ERROR: Docker container exited before server became healthy."
-            echo "Check logs: docker logs $CONTAINER_ID"
-            exit 1
-        fi
+    if [[ -n "$SERVER_PID" ]] && ! kill -0 "$SERVER_PID" 2>/dev/null; then
+        kill "$TAIL_PID" 2>/dev/null || true
+        echo "ERROR: vLLM server died before becoming healthy."
+        echo "Check logs: $SERVER_LOG"
+        exit 1
     fi
 
     ELAPSED=$((ELAPSED + INTERVAL))
@@ -241,6 +224,7 @@ echo "Running benchmark..."
 echo "  Num prompts: $NUM_PROMPTS"
 echo "  Num warmups: $NUM_WARMUPS"
 echo "  Max concurrency: $CONC"
+nvidia-smi || true
 
 python3 "${SCRIPT_DIR}/lib/benchmark_serving.py" \
     --model "$MODEL" \
@@ -269,15 +253,17 @@ fi
 # ─── Post-process results ───────────────────────────────────────────────────
 echo ""
 echo "Post-processing results..."
+DATE="${DATE:-$(date +'%Y-%m-%d %H:%M:%S')}"
 
 python3 "${SCRIPT_DIR}/process_result.py" \
     --raw-result "${OUTPUT_DIR}/${RESULT_FILENAME}.json" \
     --output-dir "$OUTPUT_DIR" \
-    --hw h200 \
+    --device "$DEVICE" \
+    --date "$DATE" \
     --tp "$TP" \
     --conc "$CONC" \
     --framework vllm \
-    --precision fp4 \
+    --precision ${PRECISION} \
     --model "$MODEL" \
     --image "$IMAGE" \
     --isl "$ISL" \
@@ -290,3 +276,7 @@ echo "============================================="
 echo " Raw result:  ${OUTPUT_DIR}/${RESULT_FILENAME}.json"
 echo " Aggregated:  ${OUTPUT_DIR}/agg_${RESULT_FILENAME}.json"
 echo "============================================="
+
+# --- Upload results ---
+buildkite-agent artifact upload "${OUTPUT_DIR}/agg_${RESULT_FILENAME}.json"
+buildkite-agent artifact upload "${OUTPUT_DIR}/${RESULT_FILENAME}.json"

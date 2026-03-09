@@ -1,0 +1,50 @@
+definitions:
+  docker-common-h200: &docker-common-h200
+    entrypoint: "/bin/bash"
+    always-pull: true
+    propagate-environment: true
+    gpus: "${BUILDKITE_PLUGIN_DOCKER_GPUS:-all}"
+    environment:
+      - HF_HOME=/mnt/vllm-ci
+      - HF_TOKEN
+    volumes:
+      - /dev/shm:/dev/shm
+      - /mnt/vllm-ci:/mnt/vllm-ci
+    mount-buildkite-agent: true
+
+steps:
+- input: "Input information"
+  key: input-information
+  fields:
+    - text: "Image"
+      key: "image"
+      required: true
+    - text: "Date"
+      key: "date"
+      required: false
+      hint: "Timestamp for results (e.g. 2025-07-01 12:00:00). Leave blank to use current date/time."
+    - select: "Config"
+      key: "config"
+      required: true
+      multiple: true
+      options:
+        - label: "H200 - GPT-OSS-120B"
+          value: "h200_gpt-oss-120b"
+        - label: "B200 - GPT-OSS-120B"
+          value: "b200_gpt-oss-120b"
+        - label: "H200 - Qwen3.5-397B-A17B"
+          value: "h200_qwen-3.5"
+        - label: "B200 - Qwen3.5-397B-A17B"
+          value: "b200_qwen-3.5"
+        - label: "H200 - Qwen3.5-397B-A17B-FP8"
+          value: "h200_qwen-3.5_fp8"
+        - label: "B200 - Qwen3.5-397B-A17B-FP8"
+          value: "b200_qwen-3.5_fp8"
+        - label: "H200 - Kimi-K2.5"
+          value: "h200_kimi-k2.5"
+
+- label: "Bootstrap"
+  command: ./.buildkite/bootstrap.sh
+  agents:
+    queue: small_cpu_queue_postmerge
+  depends_on: input-information
