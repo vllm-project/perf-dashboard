@@ -54,5 +54,5 @@ steps:
         output_sequence_length:
           - "1024"
         tensor_parallel_size:
-          - "2"
-          - "1"
+          - "4"
+          - "8"
