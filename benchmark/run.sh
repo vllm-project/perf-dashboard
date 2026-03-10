@@ -176,8 +176,7 @@ PYTHONNOUSERSITE=1 VLLM_SERVER_TIMEOUT=1800 vllm serve "$MODEL" \
     --gpu-memory-utilization "$GPU_MEM_UTIL" \
     --tensor-parallel-size "$TP" \
     --max-model-len "$MAX_MODEL_LEN" \
-    "${MAX_NUM_SEQS_ARGS[@]}" \
-    --disable-log-requests > "$SERVER_LOG" 2>&1 &
+    "${MAX_NUM_SEQS_ARGS[@]}" > "$SERVER_LOG" 2>&1 &
 SERVER_PID=$!
 echo "vLLM server started (PID $SERVER_PID)"
 
