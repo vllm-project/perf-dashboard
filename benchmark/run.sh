@@ -190,6 +190,7 @@ PYTHONNOUSERSITE=1 VLLM_SERVER_TIMEOUT=1800 vllm serve "$MODEL" \
     ${CONFIG_FILE:+--config "$CONFIG_FILE"} \
     --gpu-memory-utilization "$GPU_MEM_UTIL" \
     --tensor-parallel-size "$TP" \
+    --enable-prefix-caching \
     --max-model-len "$MAX_MODEL_LEN" \
     "${MAX_NUM_SEQS_ARGS[@]}" > "$SERVER_LOG" 2>&1 &
 SERVER_PID=$!
