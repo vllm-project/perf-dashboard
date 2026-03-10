@@ -8,6 +8,8 @@ definitions:
       - HF_TOKEN
       - IMAGE=$IMAGE
       - DATE=$DATE
+    volumes:
+      - /dev/shm:/dev/shm
     mount-buildkite-agent: true
 
 steps:
