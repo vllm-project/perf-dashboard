@@ -184,6 +184,7 @@ if [[ -n "$CONFIG_FILE" ]] && grep -q '^max-num-seqs:' "$CONFIG_FILE" 2>/dev/nul
     MAX_NUM_SEQS_ARGS=()
 fi
 
+echo "HF HOME: $HF_HOME"
 PYTHONNOUSERSITE=1 VLLM_SERVER_TIMEOUT=1800 vllm serve "$MODEL" \
     --host 0.0.0.0 \
     --port "$PORT" \
