@@ -163,6 +163,18 @@ if [[ "$MODEL" == "openai/gpt-oss-120b" ]]; then
         export TORCH_CUDA_ARCH_LIST="10.0"
     fi
 fi
+
+if [[ "$MODEL" == "Qwen/Qwen3-Next-80B-A3B-Instruct-FP8" ]]; then
+    if [[ "$DEVICE" = "b200" ]]; then
+        echo "Setting Qwen3 Next FP8 config..."
+        export VLLM_USE_FLASHINFER_MOE_FP8=1
+        export VLLM_FLASHINFER_MOE_BACKEND=latency
+        export VLLM_USE_DEEP_GEMM=0
+        export VLLM_USE_TRTLLM_ATTENTION=0
+        export VLLM_ATTENTION_BACKEND=FLASH_ATTN
+    fi
+fi
+
 # Skip --max-num-seqs if already specified in config file
 MAX_NUM_SEQS_ARGS=(--max-num-seqs "$CONC")
 if [[ -n "$CONFIG_FILE" ]] && grep -q '^max-num-seqs:' "$CONFIG_FILE" 2>/dev/null; then
