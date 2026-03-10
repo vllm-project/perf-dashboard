@@ -10,6 +10,7 @@ definitions:
       - DATE=$DATE
     volumes:
       - /dev/shm:/dev/shm
+      - /raid:/raid
     mount-buildkite-agent: true
 
 steps:
