@@ -16,7 +16,6 @@ OSL=""
 CONC=""
 GPU_MEM_UTIL=""
 RANDOM_RANGE_RATIO=""
-HF_CACHE=""
 CONFIG_FILE=""
 
 # ─── Usage ────────────────────────────────────────────────────────────────────
@@ -35,7 +34,6 @@ Required:
   --conc CONC             Max concurrency
   --gpu-mem-util FLOAT    GPU memory utilization
   --random-range-ratio R  Random range ratio
-  --hf-cache DIR          HuggingFace cache directory
   --config CONFIG_FILE    vLLM config file
 
 Optional:
@@ -48,7 +46,7 @@ Example:
   ./run.sh --model openai/gpt-oss-120b --image vllm/vllm-openai:v0.13.0 \\
            --tp 8 --precision fp4 --isl 1024 --osl 1024 --conc 64 \\
            --gpu-mem-util 0.9 --random-range-ratio 1.0 \\
-           --hf-cache /dev/shm/.cache/huggingface --config configs/h200_gpt_oss.yaml
+           --config configs/h200_gpt_oss.yaml
 EOF
     exit 0
 }
@@ -69,7 +67,6 @@ while [[ $# -gt 0 ]]; do
         --output-dir)      OUTPUT_DIR="$2";      shift 2 ;;
         --gpu-mem-util)    GPU_MEM_UTIL="$2";    shift 2 ;;
         --random-range-ratio) RANDOM_RANGE_RATIO="$2"; shift 2 ;;
-        --hf-cache)        HF_CACHE="$2";        shift 2 ;;
         --config)          CONFIG_FILE="$2";      shift 2 ;;
         -h|--help)         usage ;;
         *)                 echo "Unknown option: $1"; usage ;;
@@ -88,12 +85,18 @@ MISSING=()
 [[ -z "$CONC" ]]               && MISSING+=("--conc")
 [[ -z "$GPU_MEM_UTIL" ]]       && MISSING+=("--gpu-mem-util")
 [[ -z "$RANDOM_RANGE_RATIO" ]] && MISSING+=("--random-range-ratio")
-[[ -z "$HF_CACHE" ]]           && MISSING+=("--hf-cache")
 
 if [[ ${#MISSING[@]} -gt 0 ]]; then
     echo "ERROR: Missing required options: ${MISSING[*]}"
     echo ""
     usage
+fi
+
+# ─── HF cache ───────────────────────────────────────────────────────────────
+if [[ -d /raid ]]; then
+    export HF_HOME=/raid
+elif [[ -d /mnt/vllm-ci ]]; then
+    export HF_HOME=/mnt/vllm-ci
 fi
 
 # ─── Derived values ──────────────────────────────────────────────────────────

@@ -16,8 +16,7 @@ Self-contained benchmark for running GPT-OSS-120B FP4 on H200 with vLLM. No depe
   --model openai/gpt-oss-120b \
   --image vllm/vllm-openai:v0.13.0 \
   --tp 8 --isl 1024 --osl 1024 --conc 64 \
-  --gpu-mem-util 0.9 --random-range-ratio 1.0 \
-  --hf-cache /dev/shm/.cache/huggingface
+  --gpu-mem-util 0.9 --random-range-ratio 1.0
 ```
 
 ## CLI Reference
@@ -34,7 +33,6 @@ Self-contained benchmark for running GPT-OSS-120B FP4 on H200 with vLLM. No depe
 | `--conc` | Max concurrency |
 | `--gpu-mem-util` | GPU memory utilization |
 | `--random-range-ratio` | Random range ratio for input/output lengths |
-| `--hf-cache` | HuggingFace cache directory |
 
 ### Optional
 
@@ -52,7 +50,6 @@ for c in 4 8 16 32 64; do
     --model openai/gpt-oss-120b --image vllm/vllm-openai:v0.13.0 \
     --tp 8 --isl 1024 --osl 1024 --conc $c \
     --gpu-mem-util 0.9 --random-range-ratio 1.0 \
-    --hf-cache /dev/shm/.cache/huggingface \
     --output-dir results/conc_sweep
 done
 
@@ -62,7 +59,6 @@ for tp in 2 4 8; do
     --model openai/gpt-oss-120b --image vllm/vllm-openai:v0.13.0 \
     --tp $tp --isl 1024 --osl 1024 --conc 64 \
     --gpu-mem-util 0.9 --random-range-ratio 1.0 \
-    --hf-cache /dev/shm/.cache/huggingface \
     --output-dir results/tp_sweep
 done
 ```

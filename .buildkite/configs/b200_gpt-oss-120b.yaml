@@ -41,7 +41,6 @@ steps:
                 --tp {{ matrix.tensor_parallel_size }} \
                 --gpu-mem-util 0.9 \
                 --random-range-ratio 1.0 \
-                --hf-cache /raid/ \
                 --config benchmark/configs/b200_gpt_oss.yaml
     matrix:
       setup:
