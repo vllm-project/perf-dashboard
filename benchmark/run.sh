@@ -93,10 +93,12 @@ if [[ ${#MISSING[@]} -gt 0 ]]; then
 fi
 
 # ─── HF cache ───────────────────────────────────────────────────────────────
-if [[ -d /raid ]]; then
-    export HF_HOME=/raid
-elif [[ -d /mnt/vllm-ci ]]; then
-    export HF_HOME=/mnt/vllm-ci
+if [[ -z "${HF_HOME:-}" ]]; then
+    if [[ -d /raid ]]; then
+        export HF_HOME=/raid
+    elif [[ -d /mnt/vllm-ci ]]; then
+        export HF_HOME=/mnt/vllm-ci
+    fi
 fi
 
 # ─── Derived values ──────────────────────────────────────────────────────────
