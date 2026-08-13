@@ -8,6 +8,7 @@ Self-contained benchmark for running GPT-OSS-120B FP4 on H200 with vLLM. No depe
 - vLLM installed locally (`pip install vllm`)
 - Python 3.10+ with `numpy`, `aiohttp`, `tqdm`, `transformers`
 - HuggingFace access token for gated models (set `HF_TOKEN`)
+- Ingestion bearer token (set `INGEST_BEARER_TOKEN` for local result uploads)
 
 ## Quickstart
 
@@ -19,6 +20,10 @@ Self-contained benchmark for running GPT-OSS-120B FP4 on H200 with vLLM. No depe
   --gpu-mem-util 0.9 --random-range-ratio 1.0 \
   --hf-cache /dev/shm/.cache/huggingface
 ```
+
+Buildkite jobs retrieve `INGEST_BEARER_TOKEN` from the CI cluster secret store
+before starting the benchmark. Do not put the token in pipeline YAML or build
+environment settings.
 
 ## CLI Reference
 

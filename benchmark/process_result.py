@@ -11,6 +11,17 @@ import sys
 import requests
 
 
+def ingest_headers():
+    token = os.environ.get("INGEST_BEARER_TOKEN", "").strip()
+    if not token:
+        raise RuntimeError("INGEST_BEARER_TOKEN is required for result ingestion")
+    return {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+        "X-Source": "Manual Test",
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Post-process raw benchmark results into aggregated format."
@@ -115,10 +126,7 @@ def main():
 
     try:
         endpoint = "https://vllm-perf-data-ingest-224810116257.us-central1.run.app/"
-        headers = {
-            "Content-Type": "application/json",
-            "X-Source": "Manual Test"
-        }
+        headers = ingest_headers()
         payload = data
         response = requests.post(endpoint, headers=headers, json=payload, timeout=10)
         response.raise_for_status()
