@@ -29,7 +29,7 @@ steps:
           command:
             - -c
             - |
-              ./benchmark/run.sh \
+              ./.buildkite/run_with_ingest_auth.sh ./benchmark/run.sh \
                 --image $IMAGE \
                 --date "$DATE" \
                 --model Qwen/Qwen3.5-397B-A17B-FP8 \
